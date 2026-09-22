@@ -55,9 +55,10 @@ Legenda: ✅ Feito · 🟡 Parcial · ❌ Faltando
 
 ## 7. Casca do editor e áreas
 
-- ❌ Menus **Arquivo/Editar/Visualizar/Janela/Ajuda** são botões sem nenhuma ação e não aparecem desabilitados — viola a regra 2 do `CLAUDE.md` ("nenhum botão sem ação").
-- ❌ Editores futuros (Moldes 2D, Nós, Console Python, Tabela de Medidas) nem aparecem no seletor de área, muito menos desabilitados com o aviso "Disponível na Fase X".
-- 🟡 Botões Salvar/Adicionar continuam clicáveis em modo leitura, mas fazem no-op silencioso em vez de desabilitar/ocultar.
+- ✅ **(etapa 4)** Menus **Arquivo** (Salvar, Baixar cópia) e **Editar** (Desfazer, Refazer) viram dropdowns reais alimentados pelo `CommandRegistry`; **Adicionar** (Cubo/Esfera/Plano) idem; **Ajuda** abre a paleta F3. **Visualizar** e **Janela** ficam desabilitados (nada implementado ainda nesta fase — split de áreas é a etapa 5, vistas numéricas é a etapa 7); "Novo workspace" também desabilitado em vez de disparar `alert(...)`.
+- ✅ **(etapa 4)** Editores futuros (Moldes 2D, Tabela de Medidas, Nós, Console Python) agora aparecem no seletor de área, desabilitados, com o aviso "Disponível na Fase X".
+- ✅ **(etapa 4)** Botão Salvar do cabeçalho fica `disabled` em modo leitura, em vez de no-op silencioso.
+- 🟡 Continua faltando: o botão "Maximizar área" de cada painel não tem ação (fica para a etapa 5, junto da árvore de áreas).
 
 ## 8. Viewport, seleção e propriedades
 
@@ -69,7 +70,7 @@ Legenda: ✅ Feito · 🟡 Parcial · ❌ Faltando
 
 ## 9. Comandos, transformação e histórico
 
-- 🟡 `CommandRegistry` (`src/core/commands.ts`) existe e tem teste, mas **não é usado em lugar nenhum da UI** — o F3 do `EditorShell` usa um array ad-hoc próprio, sem id/atalho/contexto, o oposto do que a spec pede ("menus, atalhos e F3 consomem o mesmo registro").
+- ✅ **(etapa 4)** `CommandRegistry` agora é a fonte única: `EditorShell` registra os comandos (Adicionar cubo/esfera/plano, Desfazer, Refazer, Salvar, Baixar cópia, Atalhos) com id/atalho/contexto, e os menus, o F3 (que agora mostra o atalho de cada comando) e Ctrl+S/Ctrl+Z/Ctrl+Shift+Z consomem esse mesmo registro via `registry.execute(...)`.
 - ❌ **Não existe** a máquina de estado modal G/R/S (trava de eixo, entrada numérica, confirmar/cancelar) — é o critério de aceite mais citado no `fase-0.md` (`G → X → 2 → Enter`).
 - ❌ `history.jumpTo` existe mas não é usado; não há painel "Editar → Histórico" navegável.
 
@@ -116,7 +117,7 @@ Legenda: ✅ Feito · 🟡 Parcial · ❌ Faltando
 1. ✅ **Infra e tooling** — scripts `test`/`typecheck`, migrações copiadas para `supabase/migrations/`, `.env.example`.
 2. ✅ **Desacoplar login do Lovable** — trocar Google OAuth para `supabase.auth.signInWithOAuth`, remover `src/integrations/lovable/`, adicionar recuperação de senha.
 3. ✅ **Limpeza de resíduos** — removidos `.lovable/`, `drizzle/*`, dependências mortas do Lovable, headers "auto-generated"; README reescrito; `roadmap.md`/`AGENTS.md` removidos.
-4. **Casca do editor: comandos e menus** — ligar `EditorShell` ao `CommandRegistry` real, desabilitar/ocultar itens de menu sem ação, listar editores futuros desabilitados com "Disponível na Fase X".
+4. ✅ **Casca do editor: comandos e menus** — `EditorShell` ligado ao `CommandRegistry` real, menus sem ação desabilitados, editores futuros listados com "Disponível na Fase X".
 5. **Árvore de áreas** — split/resize/join real, persistido em `document.workspaces`.
 6. **Transformação modal G/R/S + histórico navegável** — extrair conversão graus/radianos para `core/`, implementar a máquina de estado G/R/S, painel de histórico.
 7. **Viewport fiel ao Blender** — WebGPU real com fallback verdadeiro, botão do meio/Shift+meio, vistas numéricas + preferência de numpad.

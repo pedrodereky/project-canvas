@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
@@ -18,6 +18,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuShortcut,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   acquireLock,
   getPreferences,
   heartbeatLock,
@@ -26,6 +33,7 @@ import {
   saveProject,
 } from "@/lib/projects.functions";
 import { useEditorStore } from "./store";
+import { CommandRegistry, type CommandContext } from "@/core/commands";
 import type { AreaType, ProjectDocument, SceneObject, Vec3 } from "@/core/document";
 const Viewport = lazy(() => import("./Viewport"));
 const editorNames: Record<AreaType, string> = {
@@ -39,6 +47,12 @@ const roleNames: Record<string, string> = {
   commenter: "Comentarista",
   viewer: "Leitor",
 };
+const futureEditors = [
+  { label: "Moldes 2D", phase: "Fase 1" },
+  { label: "Tabela de Medidas", phase: "Fase 4" },
+  { label: "Nós", phase: "Fase 5" },
+  { label: "Console Python", phase: "Fase 7" },
+];
 export function EditorShell({ projectId }: { projectId: string }) {
   const navigate = useNavigate(),
     load = useServerFn(loadProject),
@@ -124,6 +138,71 @@ export function EditorShell({ projectId }: { projectId: string }) {
       setNotice("Suas últimas alterações não foram salvas porque outra sessão assumiu a edição");
     }
   }
+  const registryRef = useRef<CommandRegistry | undefined>(undefined);
+  if (!registryRef.current) registryRef.current = new CommandRegistry();
+  const registry = registryRef.current;
+  // Commands close over `latest` (via a ref) instead of `project`/`document`/`persist`
+  // directly, so registration can happen once without the closures going stale.
+  const latestRef = useRef({ project, document, persist, editable: store.editable });
+  latestRef.current = { project, document, persist, editable: store.editable };
+  useEffect(() => {
+    const unregister = [
+      registry.register({
+        id: "add-cube",
+        name: "Adicionar cubo",
+        needsEdit: true,
+        run: () => store.add("cube"),
+      }),
+      registry.register({
+        id: "add-sphere",
+        name: "Adicionar esfera",
+        needsEdit: true,
+        run: () => store.add("sphere"),
+      }),
+      registry.register({
+        id: "add-plane",
+        name: "Adicionar plano",
+        needsEdit: true,
+        run: () => store.add("plane"),
+      }),
+      registry.register({
+        id: "undo",
+        name: "Desfazer",
+        shortcut: "Ctrl+Z",
+        needsEdit: true,
+        run: () => store.undo(),
+      }),
+      registry.register({
+        id: "redo",
+        name: "Refazer",
+        shortcut: "Ctrl+Shift+Z",
+        needsEdit: true,
+        run: () => store.redo(),
+      }),
+      registry.register({
+        id: "save",
+        name: "Salvar",
+        shortcut: "Ctrl+S",
+        needsEdit: true,
+        run: () => void latestRef.current.persist(),
+      }),
+      registry.register({
+        id: "download",
+        name: "Baixar cópia (.json)",
+        run: () => {
+          const latest = latestRef.current;
+          if (latest.project) download(latest.document, latest.project.name);
+        },
+      }),
+      registry.register({
+        id: "shortcuts",
+        name: "Atalhos e comandos",
+        shortcut: "F3",
+        run: () => setPalette(true),
+      }),
+    ];
+    return () => unregister.forEach((off) => off());
+  }, [registry, store]);
   useEffect(() => {
     if (!store.dirty || lock !== "owned") return;
     const timer = setTimeout(() => void persist(), 2000);
@@ -137,29 +216,20 @@ export function EditorShell({ projectId }: { projectId: string }) {
         e.preventDefault();
         setPalette(true);
       }
+      const context: CommandContext = { editable: latestRef.current.editable, focusedArea: null };
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
         e.preventDefault();
-        void persist();
+        registry.execute("save", context);
       }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
         e.preventDefault();
-        if (e.shiftKey) store.redo();
-        else store.undo();
+        registry.execute(e.shiftKey ? "redo" : "undo", context);
       }
     };
     addEventListener("keydown", key);
     return () => removeEventListener("keydown", key);
-  }, [project, document, lock]);
-  const commands = useMemo(
-    () => [
-      { name: "Adicionar cubo", run: () => store.add("cube") },
-      { name: "Adicionar esfera", run: () => store.add("sphere") },
-      { name: "Adicionar plano", run: () => store.add("plane") },
-      { name: "Desfazer", run: store.undo },
-      { name: "Refazer", run: store.redo },
-    ],
-    [],
-  );
+  }, [registry]);
+  const commandContext: CommandContext = { editable: store.editable, focusedArea: null };
   if (loading || !project)
     return (
       <div className="grid min-h-screen place-items-center bg-background">
@@ -176,18 +246,53 @@ export function EditorShell({ projectId }: { projectId: string }) {
           Forma
         </Link>
         <nav className="flex h-full items-center">
-          {["Arquivo", "Editar", "Adicionar", "Visualizar", "Janela", "Ajuda"].map((x) => (
-            <button
-              key={x}
-              className="h-full px-3 hover:bg-accent"
-              onClick={() => x === "Adicionar" && store.add("cube")}
-            >
-              {x}
-            </button>
-          ))}
+          <EditorMenu
+            label="Arquivo"
+            ids={["save", "download"]}
+            registry={registry}
+            context={commandContext}
+          />
+          <EditorMenu
+            label="Editar"
+            ids={["undo", "redo"]}
+            registry={registry}
+            context={commandContext}
+          />
+          <EditorMenu
+            label="Adicionar"
+            ids={["add-cube", "add-sphere", "add-plane"]}
+            registry={registry}
+            context={commandContext}
+          />
+          <button
+            className="h-full px-3 text-muted-foreground/50"
+            disabled
+            title="Em construção nesta fase"
+          >
+            Visualizar
+          </button>
+          <button
+            className="h-full px-3 text-muted-foreground/50"
+            disabled
+            title="Em construção nesta fase"
+          >
+            Janela
+          </button>
+          <EditorMenu
+            label="Ajuda"
+            ids={["shortcuts"]}
+            registry={registry}
+            context={commandContext}
+          />
         </nav>
         <span className="ml-auto truncate px-3 font-medium">{project.name}</span>
-        <Button variant="ghost" size="icon" onClick={() => void persist()} aria-label="Salvar">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => registry.execute("save", commandContext)}
+          disabled={!commandContext.editable}
+          aria-label="Salvar"
+        >
           <Save />
         </Button>
         {project.role === "owner" && (
@@ -216,7 +321,8 @@ export function EditorShell({ projectId }: { projectId: string }) {
           size="icon"
           className="ml-1 size-8"
           aria-label="Novo workspace"
-          onClick={() => alert("Novo workspace será adicionado ao documento.")}
+          title="Em construção nesta fase"
+          disabled
         >
           <Plus />
         </Button>
@@ -300,32 +406,58 @@ export function EditorShell({ projectId }: { projectId: string }) {
               onKeyDown={(e) => {
                 if (e.key === "Escape") setPalette(false);
                 if (e.key === "Enter") {
-                  commands
-                    .filter((c) => c.name.toLowerCase().includes(search.toLowerCase()))[0]
-                    ?.run();
+                  const first = registry.search(search, commandContext)[0];
+                  if (first) registry.execute(first.id, commandContext);
                   setPalette(false);
                 }
               }}
               className="h-11 w-full border-b bg-transparent px-3 outline-none"
             />
-            {commands
-              .filter((c) => c.name.toLowerCase().includes(search.toLowerCase()))
-              .map((c) => (
-                <button
-                  key={c.name}
-                  className="block w-full rounded-sm px-3 py-2 text-left hover:bg-accent"
-                  onClick={() => {
-                    c.run();
-                    setPalette(false);
-                  }}
-                >
-                  {c.name}
-                </button>
-              ))}
+            {registry.search(search, commandContext).map((c) => (
+              <button
+                key={c.id}
+                className="flex w-full items-center gap-2 rounded-sm px-3 py-2 text-left hover:bg-accent"
+                onClick={() => {
+                  registry.execute(c.id, commandContext);
+                  setPalette(false);
+                }}
+              >
+                <span className="flex-1 truncate">{c.name}</span>
+                {c.shortcut && <span className="text-xs text-muted-foreground">{c.shortcut}</span>}
+              </button>
+            ))}
           </div>
         </div>
       )}
     </main>
+  );
+}
+function EditorMenu({
+  label,
+  ids,
+  registry,
+  context,
+}: {
+  label: string;
+  ids: string[];
+  registry: CommandRegistry;
+  context: CommandContext;
+}) {
+  const items = registry.list(context).filter((c) => ids.includes(c.id));
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger className="h-full px-3 outline-none hover:bg-accent">
+        {label}
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start">
+        {items.map((c) => (
+          <DropdownMenuItem key={c.id} onSelect={() => registry.execute(c.id, context)}>
+            {c.name}
+            {c.shortcut && <DropdownMenuShortcut>{c.shortcut}</DropdownMenuShortcut>}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 function EditorArea({ type, setType }: { type: AreaType; setType: (v: AreaType) => void }) {
@@ -341,6 +473,11 @@ function EditorArea({ type, setType }: { type: AreaType; setType: (v: AreaType) 
             {Object.entries(editorNames).map(([v, n]) => (
               <option value={v} key={v}>
                 {n}
+              </option>
+            ))}
+            {futureEditors.map((f) => (
+              <option key={f.label} value={f.label} disabled>
+                {f.label} — Disponível na {f.phase}
               </option>
             ))}
           </select>

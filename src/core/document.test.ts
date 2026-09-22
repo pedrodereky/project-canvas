@@ -1,0 +1,1 @@
+import { describe, expect, it } from "vitest"; import { createDocument, migrateDocument } from "./document"; describe("document migration",()=>it("loads schema 1",()=>expect(migrateDocument(createDocument()).schemaVersion).toBe(1)));

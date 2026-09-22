@@ -3,7 +3,7 @@ import { z } from "zod";
 export type Vec3 = [number, number, number];
 export type SceneObject = { id: string; type: "cube" | "sphere" | "plane"; name: string; visible: boolean; position: Vec3; rotation: Vec3; scale: Vec3 };
 export type AreaType = "viewport" | "outliner" | "properties";
-export type AreaNode = { kind: "area"; id: string; editor: AreaType; size?: number } | { kind: "split"; id: string; direction: "horizontal" | "vertical"; children: AreaNode[] };
+export type AreaNode = { kind: "area"; id: string; editor: AreaType; size?: number | undefined } | { kind: "split"; id: string; direction: "horizontal" | "vertical"; children: AreaNode[] };
 export type ProjectDocument = { schemaVersion: 1; scene: { objects: SceneObject[] }; selection: string[]; workspaces: { id: string; name: string; layout: AreaNode }[]; activeWorkspaceId: string };
 
 const vec3 = z.tuple([z.number(), z.number(), z.number()]);

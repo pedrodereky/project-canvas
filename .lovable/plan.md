@@ -11,13 +11,18 @@ Ficam explicitamente fora desta fase: moldes, física, edição de materiais, co
 - Substituir a tela inicial vazia por uma experiência de produto em português, com identidade visual própria de software 3D profissional, adaptada a desktop e notebook.
 - Criar páginas públicas de entrada/autenticação e páginas protegidas para o painel e o editor.
 - Configurar Lovable Cloud para autenticação, banco e Storage.
-- Adicionar as bibliotecas necessárias para Three.js, estado com patches do Immer e testes Vitest.
+- Adotar TanStack Start, React, TypeScript strict, Tailwind e shadcn/ui; lógica sensível ficará em server functions e segredos somente no servidor Cloudflare Workers, sem binários nativos nem processamento pesado.
+- Adicionar Zustand + Immer, Three.js + React Three Fiber, WebGPURenderer com fallback WebGL2 e Vitest. Física, nós e Python permanecem fora desta fase, reservando respectivamente `engine/`, `workers/` e `addons/` para as fases futuras.
+- Manter documento, comandos, unidades, migração e demais regras de domínio em TypeScript puro sob `core/`, sem React e fora das rotas; interface ficará em `components/` e `routes/`.
+- Criar `core/units` para mm ↔ m e unidade de exibição, além de `can(user, feature)` retornando `true` nesta fase.
+- Documentar em `docs/licenses.md` a licença de cada pacote instalado nesta fase.
 - Atualizar os títulos e descrições de compartilhamento de cada página.
 
 ## 2. Contas e perfis
 
 - Implementar cadastro e login por e-mail/senha e Google, confirmação de e-mail, recuperação de senha e saída segura.
 - Criar `profiles` com `id`, `nome`, `avatar_url` e `created_at`, preenchido automaticamente no cadastro.
+- Criar `user_preferences` com `user_id` e `prefs jsonb`; cada usuário poderá ler e gravar apenas as próprias preferências, incluindo **Emular teclado numérico** e o limite do histórico.
 - Manter o estado da sessão sincronizado na navegação e proteger painel/editor antes de renderizar conteúdo privado.
 - Processar, no primeiro login confirmado, convites pendentes destinados ao e-mail daquela conta.
 
@@ -26,14 +31,15 @@ Ficam explicitamente fora desta fase: moldes, física, edição de materiais, co
 Criar migrações com permissões explícitas e RLS para:
 
 - `projects`: dono, nome, datas de criação e última edição.
-- `project_members`: projeto, usuário e papel (`editor`, `comentarista` ou `leitor`).
+- `project_members`: projeto, usuário e papel (`editor`, `commenter` ou `viewer`); rótulos em português existirão apenas na interface.
 - `project_invites`: projeto, e-mail normalizado, papel, hash do token, estado e validade.
 - `share_links`: projeto, hash do token, papel, validade e revogação.
-- `project_locks`: projeto, usuário e último heartbeat.
+- `project_locks`: projeto, usuário, identificador único da sessão/aba e último heartbeat.
+- `user_preferences`: usuário e preferências em JSON.
 
 Regras principais:
 
-- O dono controla projeto, membros, convites e links; editores alteram apenas o documento quando possuem a trava; leitores e comentaristas têm somente leitura nesta fase.
+- O dono controla projeto, membros, convites e links; `editor` altera apenas o documento quando possui a trava; `viewer` e `commenter` têm somente leitura nesta fase.
 - Nenhum token bruto será persistido ou retornado depois da criação. Validação, consumo e revogação ocorrerão apenas no servidor.
 - O documento ficará no Storage em `projects/{id}/document.json`; metadados permanecem no Postgres.
 - Políticas do Storage validarão acesso ao projeto e papel do usuário.
@@ -45,6 +51,7 @@ Regras principais:
 - Implementar criação, abertura, renomeação, duplicação e exclusão com confirmação.
 - Exibir em cada cartão nome, dono, última edição e papel do usuário.
 - Duplicar metadados e o documento, sem copiar membros, convites, links ou travas.
+- Excluir completamente o arquivo no Storage e todas as linhas relacionadas em `project_members`, `project_invites`, `share_links` e `project_locks`.
 - Garantir estados reais de carregamento, vazio, erro e confirmação; nenhum controle ficará sem ação.
 
 ## 5. Compartilhamento
@@ -64,13 +71,14 @@ Definir `schemaVersion: 1` e uma função central de migração, inicialmente se
 - seleção atual;
 - workspaces e suas árvores de áreas;
 - tipo e tamanho de cada área;
-- preferências, incluindo **Emular teclado numérico**;
-- limite configurável do histórico, com padrão de 100 passos.
+
+As preferências **Emular teclado numérico** e limite do histórico, com padrão de 100 passos, serão carregadas de `user_preferences`, nunca do documento. Em modo somente leitura, alterações no layout valerão apenas para a sessão e não serão salvas.
 
 Criar um documento inicial consistente e validar todo conteúdo carregado antes de abrir o editor.
 
 ## 7. Casca do editor e áreas
 
+- Renderizar a rota do editor apenas no cliente; o servidor entregará somente a casca de carregamento. Three.js, WebGPU, Web Workers e demais APIs do navegador não entrarão no caminho de SSR.
 - Barra superior com **Arquivo, Editar, Adicionar, Visualizar, Janela e Ajuda**, além das abas de workspace.
 - Árvore recursiva de áreas para dividir horizontalmente ou verticalmente, redimensionar arrastando, juntar áreas vizinhas e trocar o editor pelo seletor de canto.
 - Editores ativos: **Viewport 3D**, **Outliner** e **Propriedades**.
@@ -102,10 +110,12 @@ Criar um documento inicial consistente e validar todo conteúdo carregado antes 
 
 - Adquirir a trava atomicamente ao abrir como dono/editor; renovar a cada 30 s e considerar expirada após 90 s.
 - Se outra sessão possuir a trava, abrir em somente leitura e mostrar **Em edição por {nome}**.
-- Abrir leitores e comentaristas sempre em somente leitura.
+- Se a trava pertencer ao mesmo usuário em outra sessão, oferecer **Assumir edição nesta aba** e transferi-la atomicamente; a aba anterior detectará a perda no heartbeat seguinte.
+- Abrir `viewer` e `commenter` sempre em somente leitura.
 - Liberar a trava ao sair quando possível, mantendo a expiração como proteção contra fechamento abrupto.
 - Implementar autosave 2 s após a última alteração e Ctrl+S, com estados **Salvo**, **Salvando…** e **Erro — tentar novamente**.
 - Validar a trava e a versão esperada também no servidor antes de gravar, evitando sobrescrita por sessão antiga.
+- Se uma gravação for recusada por perda da trava ou conflito de versão, preservar integralmente as alterações da sessão, mudar para somente leitura e mostrar **Suas últimas alterações não foram salvas porque outra sessão assumiu a edição**, com **Baixar cópia (.json)** e **Recarregar projeto**.
 - Atualizar `updated_at` somente após gravação confirmada do documento.
 
 ## 11. Testes e validação
@@ -115,6 +125,8 @@ Adicionar testes Vitest para:
 - registro, contexto e busca de comandos;
 - patches de desfazer/refazer e navegação pelo histórico;
 - conversão graus/radianos e entrada de transformações;
+- conversão mm ↔ m e unidade de exibição em `core/units`;
+- `can(user, feature)` retornando `true` nesta fase;
 - leitura e migração do documento `schemaVersion: 1`.
 
 Validar também os fluxos centrais no navegador:
@@ -132,7 +144,7 @@ Validar também os fluxos centrais no navegador:
 
 ## Limitações conhecidas da Fase 0
 
-- `comentarista` equivale a leitor; comentários serão futuros.
+- `commenter` equivale a `viewer`; comentários serão futuros.
 - Edição é exclusiva por trava, não colaborativa em tempo real.
 - O histórico de desfazer/refazer pertence à sessão e ao documento aberto; não é versionamento/auditoria multiusuário.
 - Sem provedor de e-mail configurado, convites serão entregues somente por link copiável com aviso explícito.

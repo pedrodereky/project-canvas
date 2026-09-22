@@ -228,8 +228,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      acquire_project_lock: {
+        Args: { _project_id: string; _session_id: string; _takeover?: boolean }
+        Returns: Json
+      }
       can_edit_project: {
         Args: { _project_id: string; _user_id?: string }
+        Returns: boolean
+      }
+      heartbeat_project_lock: {
+        Args: { _project_id: string; _session_id: string }
         Returns: boolean
       }
       is_project_member: {
@@ -239,6 +247,10 @@ export type Database = {
       is_project_owner: {
         Args: { _project_id: string; _user_id?: string }
         Returns: boolean
+      }
+      release_project_lock: {
+        Args: { _project_id: string; _session_id: string }
+        Returns: undefined
       }
     }
     Enums: {

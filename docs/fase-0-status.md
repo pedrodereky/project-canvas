@@ -20,8 +20,8 @@ Legenda: ✅ Feito · 🟡 Parcial · ❌ Faltando
 | Item                                                | Estado             | Onde / observação                                                                        |
 | --------------------------------------------------- | ------------------ | ---------------------------------------------------------------------------------------- |
 | Cadastro/login e-mail+senha, confirmação por e-mail | ✅                 | `src/components/app/AuthScreen.tsx`                                                      |
-| Login Google                                        | 🟡                 | usa `@lovable.dev/cloud-auth-js` (broker do Lovable), não funciona fora do Lovable Cloud |
-| Recuperação de senha                                | ❌                 | nenhum fluxo "esqueci minha senha"                                                       |
+| Login Google                                        | ✅                 | nativo via `supabase.auth.signInWithOAuth` (etapa 2)                                     |
+| Recuperação de senha                                | ✅                 | fluxo "Esqueci minha senha" + tela de nova senha via evento `PASSWORD_RECOVERY` (etapa 2) |
 | Saída segura                                        | ✅                 | `ProjectsDashboard.tsx` (`supabase.auth.signOut()`)                                      |
 | `profiles` (id, nome, avatar_url, created_at)       | ✅                 | `drizzle/migrations/0000_phase_zero_foundation.sql`, preenchido em `bootstrapUser`       |
 | `user_preferences` (emulateNumpad, historyLimit)    | ✅ tabela / ❌ uso | tabela e RLS existem; preferência de numpad nunca é lida pelo Viewport                   |
@@ -93,7 +93,7 @@ Legenda: ✅ Feito · 🟡 Parcial · ❌ Faltando
 
 **Bloqueiam ou acoplam ao Lovable Cloud em runtime:**
 
-- `@lovable.dev/cloud-auth-js` (`src/integrations/lovable/index.ts`) — login Google chama o broker do Lovable; não funciona com Supabase puro.
+- ~~`@lovable.dev/cloud-auth-js`~~ — removido na etapa 2; login Google agora é nativo do Supabase.
 - `.env` aponta para o projeto Supabase gerenciado pelo Lovable Cloud (`flrkhnuintfetxbxzcme`, visível em `supabase/config.toml`).
 - `drizzle.config.ts` usa `LOVABLE_DB_MIGRATION_URL`, variável que só existe dentro do Lovable Cloud.
 - `@lovable.dev/vite-tanstack-config` (`vite.config.ts`) — pacote público no npm (não bloqueia `bun install`), mas embute defaults de Cloudflare/nitro e detecção de sandbox do Lovable.
@@ -113,8 +113,8 @@ Legenda: ✅ Feito · 🟡 Parcial · ❌ Faltando
 
 ## Plano de etapas para concluir a Fase 0
 
-1. **Infra e tooling** _(esta etapa)_ — scripts `test`/`typecheck`, migrações copiadas para `supabase/migrations/`, `.env.example`.
-2. **Desacoplar login do Lovable** — trocar Google OAuth para `supabase.auth.signInWithOAuth`, remover `src/integrations/lovable/`, adicionar recuperação de senha.
+1. ✅ **Infra e tooling** — scripts `test`/`typecheck`, migrações copiadas para `supabase/migrations/`, `.env.example`.
+2. ✅ **Desacoplar login do Lovable** — trocar Google OAuth para `supabase.auth.signInWithOAuth`, remover `src/integrations/lovable/`, adicionar recuperação de senha.
 3. **Limpeza de resíduos** — remover `.lovable/`, `drizzle/*`, dependências mortas do Lovable, headers "auto-generated", atualizar README/roadmap/AGENTS.md.
 4. **Casca do editor: comandos e menus** — ligar `EditorShell` ao `CommandRegistry` real, desabilitar/ocultar itens de menu sem ação, listar editores futuros desabilitados com "Disponível na Fase X".
 5. **Árvore de áreas** — split/resize/join real, persistido em `document.workspaces`.

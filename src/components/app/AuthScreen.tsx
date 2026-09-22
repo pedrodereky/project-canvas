@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import { Box, Eye, EyeOff, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,8 +7,10 @@ import { lovable } from "@/integrations/lovable";
 
 export function AuthScreen() {
   const navigate=useNavigate(); const [mode,setMode]=useState<"login"|"signup">("login"); const [name,setName]=useState(""); const [email,setEmail]=useState(""); const [password,setPassword]=useState(""); const [show,setShow]=useState(false); const [busy,setBusy]=useState(false); const [message,setMessage]=useState("");
-  async function submit(e:React.FormEvent){e.preventDefault();setBusy(true);setMessage("");if(mode==="signup"){const {error}=await supabase.auth.signUp({email,password,options:{data:{full_name:name}}});setMessage(error?error.message:"Confira seu e-mail para confirmar a conta.")}else{const {error}=await supabase.auth.signInWithPassword({email,password});if(error)setMessage(error.message);else void navigate({to:"/projects"})}setBusy(false)}
-  async function google(){setBusy(true);const result=await lovable.auth.signInWithOAuth("google",{redirect_uri:window.location.origin});if(result.error){setMessage(result.error.message);setBusy(false)}else if(!result.redirected)void navigate({to:"/projects"})}
+  const { next }=useSearch({from:"/auth"});
+  function goNext(){void navigate({href:next})}
+  async function submit(e:React.FormEvent){e.preventDefault();setBusy(true);setMessage("");if(mode==="signup"){const {error}=await supabase.auth.signUp({email,password,options:{data:{full_name:name},emailRedirectTo:`${window.location.origin}${next}`}});setMessage(error?error.message:"Confira seu e-mail para confirmar a conta.")}else{const {error}=await supabase.auth.signInWithPassword({email,password});if(error)setMessage(error.message);else goNext()}setBusy(false)}
+  async function google(){setBusy(true);sessionStorage.setItem("forma:next",next);const result=await lovable.auth.signInWithOAuth("google",{redirect_uri:window.location.origin});if(result.error){setMessage(result.error.message);setBusy(false)}else if(!result.redirected)goNext()}
   return <main className="grid min-h-screen bg-background lg:grid-cols-[1.05fr_.95fr]">
     <section className="relative hidden overflow-hidden border-r border-border bg-sidebar lg:flex lg:flex-col lg:justify-between p-12">
       <div className="flex items-center gap-3 text-lg font-semibold"><span className="grid size-9 place-items-center rounded-md bg-primary text-primary-foreground"><Box className="size-5"/></span>Forma</div>

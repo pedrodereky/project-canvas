@@ -2,4 +2,48 @@ import { Canvas } from "@react-three/fiber";
 import { GizmoHelper, GizmoViewport, Grid, OrbitControls, Outlines } from "@react-three/drei";
 import { useEditorStore } from "./store";
 
-export default function Viewport(){const objects=useEditorStore(s=>s.history.present.scene.objects),selection=useEditorStore(s=>s.history.present.selection),select=useEditorStore(s=>s.select);return <Canvas camera={{position:[5,4,6],fov:50}} onPointerMissed={()=>{}}><color attach="background" args={["#202226"]}/><ambientLight intensity={1.5}/><directionalLight position={[4,8,3]} intensity={2}/><Grid infiniteGrid fadeDistance={30} sectionColor="#6f737a" cellColor="#41444a"/><axesHelper args={[2]}/>{objects.filter(o=>o.visible).map(o=><mesh key={o.id} position={o.position} rotation={o.rotation} scale={o.scale} onClick={e=>{e.stopPropagation();select(o.id,e.shiftKey)}}>{o.type==="cube"?<boxGeometry/>:o.type==="sphere"?<sphereGeometry args={[.65,32,16]}/>:<planeGeometry args={[2,2]}/>}<meshStandardMaterial color={selection.includes(o.id)?"#f2a93b":"#a9adb4"} side={2}/>{selection.includes(o.id)&&<Outlines thickness={3} color="#f7bd55"/>}</mesh>)}<OrbitControls mouseButtons={{LEFT:0,MIDDLE:0,RIGHT:2}} enableDamping/><GizmoHelper alignment="top-right" margin={[70,70]}><GizmoViewport axisColors={["#d85a5a","#61ad68","#5c81cf"]} labelColor="#f7f7f7"/></GizmoHelper></Canvas>}
+export default function Viewport() {
+  const objects = useEditorStore((s) => s.history.present.scene.objects),
+    selection = useEditorStore((s) => s.history.present.selection),
+    select = useEditorStore((s) => s.select);
+  return (
+    <Canvas camera={{ position: [5, 4, 6], fov: 50 }} onPointerMissed={() => {}}>
+      <color attach="background" args={["#202226"]} />
+      <ambientLight intensity={1.5} />
+      <directionalLight position={[4, 8, 3]} intensity={2} />
+      <Grid infiniteGrid fadeDistance={30} sectionColor="#6f737a" cellColor="#41444a" />
+      <axesHelper args={[2]} />
+      {objects
+        .filter((o) => o.visible)
+        .map((o) => (
+          <mesh
+            key={o.id}
+            position={o.position}
+            rotation={o.rotation}
+            scale={o.scale}
+            onClick={(e) => {
+              e.stopPropagation();
+              select(o.id, e.shiftKey);
+            }}
+          >
+            {o.type === "cube" ? (
+              <boxGeometry />
+            ) : o.type === "sphere" ? (
+              <sphereGeometry args={[0.65, 32, 16]} />
+            ) : (
+              <planeGeometry args={[2, 2]} />
+            )}
+            <meshStandardMaterial
+              color={selection.includes(o.id) ? "#f2a93b" : "#a9adb4"}
+              side={2}
+            />
+            {selection.includes(o.id) && <Outlines thickness={3} color="#f7bd55" />}
+          </mesh>
+        ))}
+      <OrbitControls mouseButtons={{ LEFT: 0, MIDDLE: 0, RIGHT: 2 }} enableDamping />
+      <GizmoHelper alignment="top-right" margin={[70, 70]}>
+        <GizmoViewport axisColors={["#d85a5a", "#61ad68", "#5c81cf"]} labelColor="#f7f7f7" />
+      </GizmoHelper>
+    </Canvas>
+  );
+}

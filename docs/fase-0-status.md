@@ -17,16 +17,16 @@ Legenda: ✅ Feito · 🟡 Parcial · ❌ Faltando
 
 ## 2. Contas e perfis
 
-| Item                                                | Estado             | Onde / observação                                                                        |
-| --------------------------------------------------- | ------------------ | ---------------------------------------------------------------------------------------- |
-| Cadastro/login e-mail+senha, confirmação por e-mail | ✅                 | `src/components/app/AuthScreen.tsx`                                                      |
-| Login Google                                        | ✅                 | nativo via `supabase.auth.signInWithOAuth` (etapa 2)                                     |
-| Recuperação de senha                                | ✅                 | fluxo "Esqueci minha senha" + tela de nova senha via evento `PASSWORD_RECOVERY` (etapa 2) |
-| Saída segura                                        | ✅                 | `ProjectsDashboard.tsx` (`supabase.auth.signOut()`)                                      |
-| `profiles` (id, nome, avatar_url, created_at)       | ✅                 | `drizzle/migrations/0000_phase_zero_foundation.sql`, preenchido em `bootstrapUser`       |
-| `user_preferences` (emulateNumpad, historyLimit)    | ✅ tabela / ❌ uso | tabela e RLS existem; preferência de numpad nunca é lida pelo Viewport                   |
-| Sessão sincronizada na navegação                    | ✅                 | `src/routes/__root.tsx` (`onAuthStateChange`) + `_authenticated/route.tsx`               |
-| Convites pendentes processados no 1º login          | ✅                 | `bootstrapUser` em `src/lib/projects.functions.ts`                                       |
+| Item                                                | Estado             | Onde / observação                                                                             |
+| --------------------------------------------------- | ------------------ | --------------------------------------------------------------------------------------------- |
+| Cadastro/login e-mail+senha, confirmação por e-mail | ✅                 | `src/components/app/AuthScreen.tsx`                                                           |
+| Login Google                                        | ✅                 | nativo via `supabase.auth.signInWithOAuth` (etapa 2)                                          |
+| Recuperação de senha                                | ✅                 | fluxo "Esqueci minha senha" + tela de nova senha via evento `PASSWORD_RECOVERY` (etapa 2)     |
+| Saída segura                                        | ✅                 | `ProjectsDashboard.tsx` (`supabase.auth.signOut()`)                                           |
+| `profiles` (id, nome, avatar_url, created_at)       | ✅                 | `supabase/migrations/20250101000000_phase_zero_foundation.sql`, preenchido em `bootstrapUser` |
+| `user_preferences` (emulateNumpad, historyLimit)    | ✅ tabela / ❌ uso | tabela e RLS existem; preferência de numpad nunca é lida pelo Viewport                        |
+| Sessão sincronizada na navegação                    | ✅                 | `src/routes/__root.tsx` (`onAuthStateChange`) + `_authenticated/route.tsx`                    |
+| Convites pendentes processados no 1º login          | ✅                 | `bootstrapUser` em `src/lib/projects.functions.ts`                                            |
 
 ## 3. Banco, segurança e arquivos
 
@@ -91,31 +91,31 @@ Legenda: ✅ Feito · 🟡 Parcial · ❌ Faltando
 
 ## Resíduos do Lovable
 
-**Bloqueiam ou acoplam ao Lovable Cloud em runtime:**
+**Ainda acopla ao Lovable Cloud (pendente — depende do projeto Supabase novo):**
 
-- ~~`@lovable.dev/cloud-auth-js`~~ — removido na etapa 2; login Google agora é nativo do Supabase.
-- `.env` aponta para o projeto Supabase gerenciado pelo Lovable Cloud (`flrkhnuintfetxbxzcme`, visível em `supabase/config.toml`).
-- `drizzle.config.ts` usa `LOVABLE_DB_MIGRATION_URL`, variável que só existe dentro do Lovable Cloud.
-- `@lovable.dev/vite-tanstack-config` (`vite.config.ts`) — pacote público no npm (não bloqueia `bun install`), mas embute defaults de Cloudflare/nitro e detecção de sandbox do Lovable.
+- `.env` aponta para o projeto Supabase gerenciado pelo Lovable Cloud (`flrkhnuintfetxbxzcme`, visível em `supabase/config.toml`). Só é substituído quando o `.env` local apontar para o projeto Supabase próprio.
 
-**Ruído/dívida, sem efeito no build:**
+**Deixado como está intencionalmente, fora do escopo de limpeza de resíduos:**
 
-- `.lovable/` (project.json + plano) — bookkeeping do Lovable.
-- `AGENTS.md` — aviso de "não reescreva histórico" só faz sentido com sync ativo do Lovable.
-- `roadmap.md` — roadmap antigo mencionando "Ativar Lovable Cloud", superado por `docs/fase-0.md`.
-- `src/integrations/supabase/cron-auth.ts` — código morto, não importado por ninguém; usa `LOVABLE_CRON_SECRET*`.
-- `src/integrations/supabase/previewAuthStorage.ts` — brokering de auth só ativo dentro de iframe de preview do Lovable; fora disso cai em `localStorage` sozinho.
-- `src/lib/lovable-error-reporting.ts` — reporta para `window.__lovableEvents`, que só existe dentro do Lovable; fora disso é no-op.
-- `bunfig.toml` referencia `@lovable.dev/mcp-js`, `@lovable.dev/email-js`, `@lovable.dev/webhooks-js` — nem estão nas dependências.
-- `drizzle/`, `drizzle-kit`, `drizzle-orm`, `postgres` (deps) — só existiam para empurrar migração ao Postgres do Lovable Cloud; o SQL em si é puro e já foi copiado para `supabase/migrations/`.
-- Cabeçalhos "Do not edit — auto-generated by Lovable" em vários arquivos de `src/integrations/supabase/`.
-- `README.md` — ainda tem a seção "Build with Lovable" e link do projeto Lovable.
+- `@lovable.dev/vite-tanstack-config` (`vite.config.ts`) — pacote público no npm (não bloqueia `bun install`), mas embute defaults de Cloudflare/nitro e detecção de sandbox do Lovable. Trocá-lo por uma configuração Vite própria é uma mudança de arquitetura maior (a regra 5 do `CLAUDE.md` exige pedido explícito antes de trocar stack/arquitetura) — decisão fica para quando/se for necessário.
+
+**Removido na etapa 3:**
+
+- `@lovable.dev/cloud-auth-js` (etapa 2) e agora `.lovable/` (bookkeeping do Lovable), `AGENTS.md` (aviso de sync que só fazia sentido com o Lovable ativo), `roadmap.md` (superado por este documento e por `docs/fase-0.md`).
+- `drizzle/`, `drizzle.config.ts` e as dependências `drizzle-kit`, `drizzle-orm`, `postgres` — só existiam para empurrar migração ao Postgres do Lovable Cloud via `LOVABLE_DB_MIGRATION_URL`; o SQL já estava copiado em `supabase/migrations/`.
+- `src/integrations/supabase/cron-auth.ts` — código morto (não importado por ninguém), usava `LOVABLE_CRON_SECRET*`.
+- `src/integrations/supabase/previewAuthStorage.ts` — brokering de auth só ativo dentro do iframe de preview do Lovable; `client.ts` agora deixa o supabase-js usar seu `localStorage` padrão no navegador.
+- `src/lib/lovable-error-reporting.ts` → virou `src/lib/error-reporting.ts`, sem a dependência de `window.__lovableEvents`/`__lovableReportRuntimeError` (globais que só existiam dentro do editor do Lovable).
+- Cabeçalhos "Do not edit — auto-generated" e a mensagem "Connect Supabase in Lovable Cloud." nos arquivos de `src/integrations/supabase/`.
+- Meta tag `twitter:site: @Lovable` em `src/routes/__root.tsx`.
+- Entradas mortas (`@lovable.dev/mcp-js`, `@lovable.dev/email-js`, `@lovable.dev/webhooks-js`, que nem estavam nas dependências) removidas de `bunfig.toml`.
+- `README.md` reescrito com instruções reais do projeto, sem a seção "Build with Lovable".
 
 ## Plano de etapas para concluir a Fase 0
 
 1. ✅ **Infra e tooling** — scripts `test`/`typecheck`, migrações copiadas para `supabase/migrations/`, `.env.example`.
 2. ✅ **Desacoplar login do Lovable** — trocar Google OAuth para `supabase.auth.signInWithOAuth`, remover `src/integrations/lovable/`, adicionar recuperação de senha.
-3. **Limpeza de resíduos** — remover `.lovable/`, `drizzle/*`, dependências mortas do Lovable, headers "auto-generated", atualizar README/roadmap/AGENTS.md.
+3. ✅ **Limpeza de resíduos** — removidos `.lovable/`, `drizzle/*`, dependências mortas do Lovable, headers "auto-generated"; README reescrito; `roadmap.md`/`AGENTS.md` removidos.
 4. **Casca do editor: comandos e menus** — ligar `EditorShell` ao `CommandRegistry` real, desabilitar/ocultar itens de menu sem ação, listar editores futuros desabilitados com "Disponível na Fase X".
 5. **Árvore de áreas** — split/resize/join real, persistido em `document.workspaces`.
 6. **Transformação modal G/R/S + histórico navegável** — extrair conversão graus/radianos para `core/`, implementar a máquina de estado G/R/S, painel de histórico.

@@ -17,16 +17,16 @@ Legenda: ✅ Feito · 🟡 Parcial · ❌ Faltando
 
 ## 2. Contas e perfis
 
-| Item                                                | Estado             | Onde / observação                                                                             |
-| --------------------------------------------------- | ------------------ | --------------------------------------------------------------------------------------------- |
-| Cadastro/login e-mail+senha, confirmação por e-mail | ✅                 | `src/components/app/AuthScreen.tsx`                                                           |
-| Login Google                                        | ✅                 | nativo via `supabase.auth.signInWithOAuth` (etapa 2)                                          |
-| Recuperação de senha                                | ✅                 | fluxo "Esqueci minha senha" + tela de nova senha via evento `PASSWORD_RECOVERY` (etapa 2)     |
-| Saída segura                                        | ✅                 | `ProjectsDashboard.tsx` (`supabase.auth.signOut()`)                                           |
-| `profiles` (id, nome, avatar_url, created_at)       | ✅                 | `supabase/migrations/20250101000000_phase_zero_foundation.sql`, preenchido em `bootstrapUser` |
-| `user_preferences` (emulateNumpad, historyLimit)    | ✅ tabela / ❌ uso | tabela e RLS existem; preferência de numpad nunca é lida pelo Viewport                        |
-| Sessão sincronizada na navegação                    | ✅                 | `src/routes/__root.tsx` (`onAuthStateChange`) + `_authenticated/route.tsx`                    |
-| Convites pendentes processados no 1º login          | ✅                 | `bootstrapUser` em `src/lib/projects.functions.ts`                                            |
+| Item                                                | Estado | Onde / observação                                                                             |
+| --------------------------------------------------- | ------ | --------------------------------------------------------------------------------------------- |
+| Cadastro/login e-mail+senha, confirmação por e-mail | ✅     | `src/components/app/AuthScreen.tsx`                                                           |
+| Login Google                                        | ✅     | nativo via `supabase.auth.signInWithOAuth` (etapa 2)                                          |
+| Recuperação de senha                                | ✅     | fluxo "Esqueci minha senha" + tela de nova senha via evento `PASSWORD_RECOVERY` (etapa 2)     |
+| Saída segura                                        | ✅     | `ProjectsDashboard.tsx` (`supabase.auth.signOut()`)                                           |
+| `profiles` (id, nome, avatar_url, created_at)       | ✅     | `supabase/migrations/20250101000000_phase_zero_foundation.sql`, preenchido em `bootstrapUser` |
+| `user_preferences` (emulateNumpad, historyLimit)    | ✅     | lida e gravada via o novo diálogo Editar → Preferências (etapa 7); usada pelo Viewport        |
+| Sessão sincronizada na navegação                    | ✅     | `src/routes/__root.tsx` (`onAuthStateChange`) + `_authenticated/route.tsx`                    |
+| Convites pendentes processados no 1º login          | ✅     | `bootstrapUser` em `src/lib/projects.functions.ts`                                            |
 
 ## 3. Banco, segurança e arquivos
 
@@ -59,7 +59,8 @@ Legenda: ✅ Feito · 🟡 Parcial · ❌ Faltando
 
 ## 7. Casca do editor e áreas
 
-- ✅ **(etapa 4)** Menus **Arquivo** (Salvar, Baixar cópia) e **Editar** (Desfazer, Refazer) viram dropdowns reais alimentados pelo `CommandRegistry`; **Adicionar** (Cubo/Esfera/Plano) idem; **Ajuda** abre a paleta F3. **Visualizar** e **Janela** ficam desabilitados (nada implementado ainda nesta fase — split de áreas é a etapa 5, vistas numéricas é a etapa 7); "Novo workspace" também desabilitado em vez de disparar `alert(...)`.
+- ✅ **(etapa 4)** Menus **Arquivo** (Salvar, Baixar cópia) e **Editar** (Desfazer, Refazer) viram dropdowns reais alimentados pelo `CommandRegistry`; **Adicionar** (Cubo/Esfera/Plano) idem; **Ajuda** abre a paleta F3. **Visualizar** e **Janela** ficam desabilitados (nada implementado ainda nesta fase); "Novo workspace" também desabilitado em vez de disparar `alert(...)`.
+- ✅ **(etapa 7)** **Visualizar** deixou de ser um botão desabilitado: agora é um dropdown com Vista frontal/direita/topo e Perspectiva/Ortográfica, chamando `store.requestView`/`requestToggleOrtho` — um "broadcast" que qualquer `Viewport` montado aplica à própria câmera, já que o menu (ao contrário do atalho de teclado) não sabe sobre qual viewport o usuário está. **Janela** continua desabilitado (workspaces adicionais seguem fora do escopo da Fase 0).
 - ✅ **(etapa 4)** Editores futuros (Moldes 2D, Tabela de Medidas, Nós, Console Python) agora aparecem no seletor de área, desabilitados, com o aviso "Disponível na Fase X".
 - ✅ **(etapa 4)** Botão Salvar do cabeçalho fica `disabled` em modo leitura, em vez de no-op silencioso.
 - ✅ **(etapa 5)** O botão "Maximizar área" agora funciona (mostra só aquela área em tela cheia, com um botão para restaurar); "juntar" fica desabilitado quando a área não tem uma vizinha (é a única área do workspace).
@@ -67,10 +68,11 @@ Legenda: ✅ Feito · 🟡 Parcial · ❌ Faltando
 ## 8. Viewport, seleção e propriedades
 
 - ✅ Grade, eixos, gizmo clicável, seleção com contorno visível.
-- ❌ **"Modo gráfico" simulado**: a barra de status escreve "WebGPU" só checando `navigator.gpu`, mas o `<Canvas>` em `Viewport.tsx` nunca inicializa de fato um `WebGPURenderer` — dado apresentado como real sem ser. Viola a regra 1 do `CLAUDE.md` ("nunca simular funcionalidade").
-- 🟡 Navegação do mouse incorreta: `mouseButtons={{LEFT:0,MIDDLE:0,RIGHT:2}}` mapeia botão esquerdo e do meio para o mesmo ROTATE; não existe Shift+meio para deslocar.
-- ❌ Vistas numéricas (1/3/7, Ctrl inverte, 5 ortho/perspectiva) e a preferência "emular numpad": ausentes.
-- ❌ Edição de campos por arraste (scrub): só inputs numéricos existem.
+- ✅ **(etapa 7)** Modo gráfico real: `Viewport.tsx` cria de fato um `THREE.WebGPURenderer` (`three/webgpu`) via um `gl` factory assíncrono no `<Canvas>`; a própria classe já cai para o backend WebGL2 sozinha quando WebGPU não existe (`getFallback` do three.js), e o app só lê `renderer.backend.isWebGPUBackend` depois do `init()` para decidir o texto da barra de status — nunca mais um "achismo" a partir de `navigator.gpu`.
+  - **Risco assumido e não testável por mim**: sob WebGPU real, `<Outlines>` do drei (que usava um `ShaderMaterial` GLSL cru) não seria convertido automaticamente pelo `StandardNodeLibrary` do three.js. Troquei o contorno de seleção por uma técnica de "casco invertido" (segunda malha, escala 1.05×, `side: THREE.BackSide`, `MeshBasicMaterial`), que é suportada nativamente nos dois backends. Não consegui testar visualmente em WebGPU real (exige conta autenticada + hardware/navegador com WebGPU) — vale conferir.
+- ✅ **(etapa 7)** Navegação do mouse corrigida: `mouseButtons={{ MIDDLE: 0 }}` (só o botão do meio orbita); Shift+meio já vira "deslocar" de graça, porque o `OrbitControls` do three.js troca ROTATE→PAN sozinho quando Ctrl/Meta/Shift está pressionado. Botão esquerdo fica livre para seleção; botão direito fica livre para cancelar o G/R/S.
+- ✅ **(etapa 7)** Vistas numéricas (Numpad1/3/7 = frente/direita/topo, Ctrl inverte, Numpad5 alterna perspectiva/ortográfica) e a preferência **Emular teclado numérico** (lida de `user_preferences`, com um diálogo novo em Editar → Preferências para ativá-la e ajustar o limite do histórico — não existia UI nenhuma para gravar essa preferência antes). **Não testado visualmente** (câmera/`lookAt`/`up` para a vista de topo é matemática padrão do three.js, mas só vejo funcionando de verdade com os olhos de alguém no navegador).
+- ❌ Ainda falta: edição de campos por arraste (scrub) nas Propriedades — só inputs numéricos existem. Não estava no escopo desta etapa; fica para uma limpeza futura.
 
 ## 9. Comandos, transformação e histórico
 
@@ -88,6 +90,8 @@ Legenda: ✅ Feito · 🟡 Parcial · ❌ Faltando
 ## 11. Testes
 
 ✅ existem e passam: registro de comandos (isolado), undo/redo + `jumpTo` nos dois sentidos, unidades mm↔m, graus↔radianos, `can()`, migração do documento, split/join/redimensionar/trocar editor da árvore de áreas, máquina de estado G/R/S (23/23 testes, `bun run test`).
+
+🟡 A etapa 7 (WebGPU/fallback, câmera das vistas numéricas, `OrbitControls`) não ganhou teste automatizado novo — é integração com APIs de GPU/DOM que o Vitest (ambiente Node) não consegue exercitar; só dá para validar de verdade num navegador.
 
 ❌ Não havia scripts `test`/`typecheck` no `package.json` (regra 18 do `CLAUDE.md`) — **corrigido nesta etapa**.
 
@@ -123,7 +127,7 @@ Legenda: ✅ Feito · 🟡 Parcial · ❌ Faltando
 4. ✅ **Casca do editor: comandos e menus** — `EditorShell` ligado ao `CommandRegistry` real, menus sem ação desabilitados, editores futuros listados com "Disponível na Fase X".
 5. ✅ **Árvore de áreas** — split/resize/join real, persistido em `document.workspaces`.
 6. ✅ **Transformação modal G/R/S + histórico navegável** — conversão graus/radianos extraída para `core/`, máquina de estado G/R/S, painel de histórico.
-7. **Viewport fiel ao Blender** — WebGPU real com fallback verdadeiro, botão do meio/Shift+meio, vistas numéricas + preferência de numpad.
+7. ✅ **Viewport fiel ao Blender** — WebGPU real com fallback verdadeiro, botão do meio/Shift+meio, vistas numéricas + preferência de numpad. Peça pendente de teste visual — ver seção 8.
 8. **Correções de UX de trava e erro** — mostrar `holderName` real, desabilitar (não só no-op) controles em somente leitura, estado de erro no painel, campo de validade no link de compartilhamento.
 9. **Fechamento** — completar `docs/licenses.md`, rodar checklist de aceite completo (automatizado + os 15 passos manuais do `docs/fase-0.md`), atualizar este documento com o estado final.
 

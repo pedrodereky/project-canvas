@@ -35,6 +35,7 @@ import {
   loadProject,
   releaseLock,
   saveProject,
+  savePreferences,
 } from "@/lib/projects.functions";
 import { useEditorStore } from "./store";
 import { CommandRegistry, type CommandContext } from "@/core/commands";
@@ -75,8 +76,8 @@ export function EditorShell({ projectId }: { projectId: string }) {
     [maximizedAreaId, setMaximizedAreaId] = useState<string | null>(null),
     [lock, setLock] = useState<"owned" | "other" | "self" | "readonly">("readonly"),
     [notice, setNotice] = useState(""),
-    [graphics, setGraphics] = useState("Modo compatível — WebGL2"),
     [palette, setPalette] = useState(false),
+    [preferencesOpen, setPreferencesOpen] = useState(false),
     [historyOpen, setHistoryOpen] = useState(false),
     [search, setSearch] = useState("");
   const sessionId = useRef(crypto.randomUUID());
@@ -86,6 +87,7 @@ export function EditorShell({ projectId }: { projectId: string }) {
       const [result, preferences] = await Promise.all([load({ data: { id: projectId } }), prefs()]);
       setProject(result.project);
       store.setDocument(result.document, preferences.historyLimit ?? 100);
+      store.setEmulateNumpad(preferences.emulateNumpad ?? false);
       const canEdit = result.project.role === "owner" || result.project.role === "editor";
       if (canEdit) {
         const r = await acquire({
@@ -107,8 +109,6 @@ export function EditorShell({ projectId }: { projectId: string }) {
         store.setEditable(false);
       }
       setLoading(false);
-      const nav = navigator as Navigator & { gpu?: unknown };
-      if (nav.gpu) setGraphics("WebGPU");
     })();
   }, [projectId]);
   useEffect(() => {
@@ -212,6 +212,35 @@ export function EditorShell({ projectId }: { projectId: string }) {
         name: "Histórico",
         run: () => setHistoryOpen(true),
       }),
+      registry.register({
+        id: "preferences",
+        name: "Preferências",
+        run: () => setPreferencesOpen(true),
+      }),
+      registry.register({
+        id: "view-front",
+        name: "Vista frontal",
+        shortcut: "Numpad1",
+        run: () => store.requestView("front", false),
+      }),
+      registry.register({
+        id: "view-right",
+        name: "Vista direita",
+        shortcut: "Numpad3",
+        run: () => store.requestView("right", false),
+      }),
+      registry.register({
+        id: "view-top",
+        name: "Vista de topo",
+        shortcut: "Numpad7",
+        run: () => store.requestView("top", false),
+      }),
+      registry.register({
+        id: "view-toggle-ortho",
+        name: "Perspectiva/Ortográfica",
+        shortcut: "Numpad5",
+        run: () => store.requestToggleOrtho(),
+      }),
     ];
     return () => unregister.forEach((off) => off());
   }, [registry, store]);
@@ -266,7 +295,7 @@ export function EditorShell({ projectId }: { projectId: string }) {
           />
           <EditorMenu
             label="Editar"
-            ids={["undo", "redo", "history"]}
+            ids={["undo", "redo", "history", "preferences"]}
             registry={registry}
             context={commandContext}
           />
@@ -276,13 +305,12 @@ export function EditorShell({ projectId }: { projectId: string }) {
             registry={registry}
             context={commandContext}
           />
-          <button
-            className="h-full px-3 text-muted-foreground/50"
-            disabled
-            title="Em construção nesta fase"
-          >
-            Visualizar
-          </button>
+          <EditorMenu
+            label="Visualizar"
+            ids={["view-front", "view-right", "view-top", "view-toggle-ortho"]}
+            registry={registry}
+            context={commandContext}
+          />
           <button
             className="h-full px-3 text-muted-foreground/50"
             disabled
@@ -408,7 +436,7 @@ export function EditorShell({ projectId }: { projectId: string }) {
               ? "Salvando…"
               : "Erro — tentar novamente"}
         </span>
-        <span className="ml-auto">{graphics}</span>
+        <span className="ml-auto">{store.graphicsMode}</span>
         <span className="ml-4">{roleNames[project.role]}</span>
       </footer>
       {palette && (
@@ -498,6 +526,7 @@ export function EditorShell({ projectId }: { projectId: string }) {
           </div>
         </div>
       )}
+      {preferencesOpen && <PreferencesDialog onClose={() => setPreferencesOpen(false)} />}
     </main>
   );
 }
@@ -527,6 +556,79 @@ function EditorMenu({
         ))}
       </DropdownMenuContent>
     </DropdownMenu>
+  );
+}
+function PreferencesDialog({ onClose }: { onClose: () => void }) {
+  const getPrefs = useServerFn(getPreferences),
+    savePrefs = useServerFn(savePreferences),
+    setStoreEmulateNumpad = useEditorStore((s) => s.setEmulateNumpad),
+    setStoreHistoryLimit = useEditorStore((s) => s.setHistoryLimit);
+  const [loading, setLoading] = useState(true),
+    [saving, setSaving] = useState(false),
+    [emulateNumpad, setEmulateNumpad] = useState(false),
+    [historyLimit, setHistoryLimit] = useState(100);
+  useEffect(() => {
+    void (async () => {
+      const p = await getPrefs();
+      setEmulateNumpad(p.emulateNumpad ?? false);
+      setHistoryLimit(p.historyLimit ?? 100);
+      setLoading(false);
+    })();
+  }, []);
+  async function save() {
+    setSaving(true);
+    await savePrefs({ data: { emulateNumpad, historyLimit } });
+    setStoreEmulateNumpad(emulateNumpad);
+    setStoreHistoryLimit(historyLimit);
+    setSaving(false);
+    onClose();
+  }
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/30"
+      onMouseDown={onClose}
+    >
+      <div
+        className="w-full max-w-sm rounded-md border bg-popover p-5 shadow-xl"
+        onMouseDown={(e) => e.stopPropagation()}
+      >
+        <h2 className="mb-4 text-lg font-semibold">Preferências</h2>
+        {loading ? (
+          <Loader2 className="animate-spin" />
+        ) : (
+          <div className="space-y-4">
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={emulateNumpad}
+                onChange={(e) => setEmulateNumpad(e.target.checked)}
+              />
+              Emular teclado numérico
+            </label>
+            <label className="block text-sm">
+              Limite do histórico
+              <input
+                type="number"
+                min={1}
+                max={1000}
+                value={historyLimit}
+                onChange={(e) => setHistoryLimit(Number(e.target.value))}
+                className="mt-1.5 h-9 w-full rounded-md border bg-background px-3"
+              />
+            </label>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={onClose}>
+                Cancelar
+              </Button>
+              <Button onClick={() => void save()} disabled={saving}>
+                {saving && <Loader2 className="animate-spin" />}
+                Salvar
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 function AreaTree({

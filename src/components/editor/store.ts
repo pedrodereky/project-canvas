@@ -15,6 +15,10 @@ import {
 } from "@/core/areas";
 
 type TransformPreview = { id: string; key: "position" | "rotation" | "scale"; value: Vec3 };
+export type ViewAxis = "front" | "right" | "top";
+type ViewRequest =
+  | { type: "view"; axis: ViewAxis; invert: boolean; nonce: number }
+  | { type: "toggle-ortho"; nonce: number };
 type EditorState = {
   history: History<ProjectDocument>;
   dirty: boolean;
@@ -24,9 +28,27 @@ type EditorState = {
   // `change()`, so it isn't undoable and never marks the document dirty. Only
   // the final `setVector` on confirm is a real, saved, undoable change.
   transformPreview: TransformPreview | null;
+  // Which renderer the Viewport actually initialized — set once, after the
+  // real WebGPU/WebGL2 detection resolves; never guessed from capability
+  // checks alone.
+  graphicsMode: "Detectando…" | "WebGPU" | "Modo compatível — WebGL2";
+  // From user_preferences; read-only here, saved back to the server elsewhere.
+  emulateNumpad: boolean;
+  // Shared across every mounted Viewport (Fase 0 keeps this simple: one
+  // perspective/ortho setting for the whole editor, not per area).
+  ortho: boolean;
+  // A one-shot broadcast: every Viewport applies it and moves on. The nonce
+  // makes repeat requests (e.g. pressing Numpad1 twice) distinct changes.
+  viewRequest: ViewRequest | null;
   setDocument: (doc: ProjectDocument, limit: number) => void;
+  setHistoryLimit: (limit: number) => void;
   setEditable: (v: boolean) => void;
   setSaveState: (v: EditorState["saveState"]) => void;
+  setGraphicsMode: (v: EditorState["graphicsMode"]) => void;
+  setEmulateNumpad: (v: boolean) => void;
+  setOrtho: (v: boolean) => void;
+  requestView: (axis: ViewAxis, invert: boolean) => void;
+  requestToggleOrtho: () => void;
   markSaved: () => void;
   add: (type: SceneObject["type"]) => void;
   select: (id: string, additive?: boolean) => void;
@@ -49,9 +71,25 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   editable: true,
   saveState: "saved",
   transformPreview: null,
+  graphicsMode: "Detectando…",
+  emulateNumpad: false,
+  ortho: false,
+  viewRequest: null,
   setDocument: (doc, limit) => set({ history: createHistory(doc, limit), dirty: false }),
+  setHistoryLimit: (limit) => set((s) => ({ history: { ...s.history, limit } })),
   setEditable: (editable) => set({ editable }),
   setSaveState: (saveState) => set({ saveState }),
+  setGraphicsMode: (graphicsMode) => set({ graphicsMode }),
+  setEmulateNumpad: (emulateNumpad) => set({ emulateNumpad }),
+  setOrtho: (ortho) => set({ ortho }),
+  requestView: (axis, invert) =>
+    set((s) => ({
+      viewRequest: { type: "view", axis, invert, nonce: (s.viewRequest?.nonce ?? 0) + 1 },
+    })),
+  requestToggleOrtho: () =>
+    set((s) => ({
+      viewRequest: { type: "toggle-ortho", nonce: (s.viewRequest?.nonce ?? 0) + 1 },
+    })),
   markSaved: () => set({ dirty: false, saveState: "saved" }),
   add: (type) => {
     if (!get().editable) return;

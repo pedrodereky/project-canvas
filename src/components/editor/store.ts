@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { createHistory, change, undo, redo, type History } from "@/core/history";
+import { createHistory, change, undo, redo, jumpTo, type History } from "@/core/history";
 import {
   createDocument,
   type AreaType,
@@ -14,11 +14,16 @@ import {
   splitArea as splitAreaNode,
 } from "@/core/areas";
 
+type TransformPreview = { id: string; key: "position" | "rotation" | "scale"; value: Vec3 };
 type EditorState = {
   history: History<ProjectDocument>;
   dirty: boolean;
   editable: boolean;
   saveState: "saved" | "saving" | "error";
+  // Live preview shown while a G/R/S drag is in progress — never goes through
+  // `change()`, so it isn't undoable and never marks the document dirty. Only
+  // the final `setVector` on confirm is a real, saved, undoable change.
+  transformPreview: TransformPreview | null;
   setDocument: (doc: ProjectDocument, limit: number) => void;
   setEditable: (v: boolean) => void;
   setSaveState: (v: EditorState["saveState"]) => void;
@@ -28,12 +33,14 @@ type EditorState = {
   toggleVisible: (id: string) => void;
   rename: (id: string, name: string) => void;
   setVector: (id: string, key: "position" | "rotation" | "scale", value: Vec3) => void;
+  setTransformPreview: (preview: TransformPreview | null) => void;
   splitArea: (areaId: string, direction: "horizontal" | "vertical") => void;
   joinArea: (areaId: string) => void;
   setAreaEditor: (areaId: string, editor: AreaType) => void;
   resizeSplit: (splitId: string, sizes: Record<string, number>) => void;
   undo: () => void;
   redo: () => void;
+  jumpTo: (index: number) => void;
 };
 const names = { cube: "Cubo", sphere: "Esfera", plane: "Plano" };
 export const useEditorStore = create<EditorState>((set, get) => ({
@@ -41,6 +48,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   dirty: false,
   editable: true,
   saveState: "saved",
+  transformPreview: null,
   setDocument: (doc, limit) => set({ history: createHistory(doc, limit), dirty: false }),
   setEditable: (editable) => set({ editable }),
   setSaveState: (saveState) => set({ saveState }),
@@ -102,6 +110,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       dirty: true,
     }));
   },
+  setTransformPreview: (preview) => set({ transformPreview: preview }),
   // Layout actions run regardless of `editable`: readers may rearrange areas for
   // their own session, but persist() only ever saves while the caller holds the
   // lock, so a non-owner's changes never reach the server (spec: layout changes
@@ -147,5 +156,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
   redo: () => {
     if (get().editable) set((s) => ({ history: redo(s.history), dirty: true }));
+  },
+  jumpTo: (index) => {
+    if (get().editable) set((s) => ({ history: jumpTo(s.history, index), dirty: true }));
   },
 }));

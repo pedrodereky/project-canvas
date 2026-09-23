@@ -75,8 +75,9 @@ Legenda: ✅ Feito · 🟡 Parcial · ❌ Faltando
 ## 9. Comandos, transformação e histórico
 
 - ✅ **(etapa 4)** `CommandRegistry` agora é a fonte única: `EditorShell` registra os comandos (Adicionar cubo/esfera/plano, Desfazer, Refazer, Salvar, Baixar cópia, Atalhos) com id/atalho/contexto, e os menus, o F3 (que agora mostra o atalho de cada comando) e Ctrl+S/Ctrl+Z/Ctrl+Shift+Z consomem esse mesmo registro via `registry.execute(...)`.
-- ❌ **Não existe** a máquina de estado modal G/R/S (trava de eixo, entrada numérica, confirmar/cancelar) — é o critério de aceite mais citado no `fase-0.md` (`G → X → 2 → Enter`).
-- ❌ `history.jumpTo` existe mas não é usado; não há painel "Editar → Histórico" navegável.
+- ✅ **(etapa 6)** Máquina de estado modal G/R/S em `src/core/transformModal.ts` (pura, testada): G/R/S inicia, X/Y/Z trava o eixo, dígitos/`-`/`.` digitam o valor exato, Backspace apaga, Enter ou clique esquerdo confirma, Esc ou clique direito cancela sem alterar nada. `G → X → 2 → Enter` desloca exatamente 2 m, conforme o critério de aceite. A pré-visualização do arraste vive em `store.transformPreview` (nunca passa por `change()`, então não é undoável nem suja o documento); só o `setVector` final ao confirmar é salvo. **Simplificação assumida**: sem eixo travado, mouse e teclado não alteram nada — o arraste livre no plano de tela (sem eixo) fica para uma fase futura, já que nenhum critério de aceite da Fase 0 exige isso.
+- ✅ **(etapa 6)** `history.jumpTo` agora navega nos dois sentidos (undo e redo) e alimenta o painel **Editar → Histórico**, que lista todo o histórico (incluindo "Estado inicial") e pula para qualquer ponto com um clique; desabilitado quando `!store.editable`, igual a desfazer/refazer.
+- ✅ **(etapa 6)** Conversão graus↔radianos extraída para `src/core/angles.ts` (`radToDeg`/`degToRad`), com teste, e usada tanto no campo de rotação das Propriedades quanto na máquina de transformação modal.
 
 ## 10. Salvamento e trava
 
@@ -86,9 +87,7 @@ Legenda: ✅ Feito · 🟡 Parcial · ❌ Faltando
 
 ## 11. Testes
 
-✅ existem e passam: registro de comandos (isolado), undo/redo, unidades mm↔m, `can()`, migração do documento, split/join/redimensionar/trocar editor da árvore de áreas (12/12 testes, `bun run test`).
-
-❌ Falta teste de conversão graus/radianos — a lógica está inline em `EditorShell.tsx`, deveria estar em `core/` como as demais regras de domínio.
+✅ existem e passam: registro de comandos (isolado), undo/redo + `jumpTo` nos dois sentidos, unidades mm↔m, graus↔radianos, `can()`, migração do documento, split/join/redimensionar/trocar editor da árvore de áreas, máquina de estado G/R/S (23/23 testes, `bun run test`).
 
 ❌ Não havia scripts `test`/`typecheck` no `package.json` (regra 18 do `CLAUDE.md`) — **corrigido nesta etapa**.
 
@@ -123,7 +122,7 @@ Legenda: ✅ Feito · 🟡 Parcial · ❌ Faltando
 3. ✅ **Limpeza de resíduos** — removidos `.lovable/`, `drizzle/*`, dependências mortas do Lovable, headers "auto-generated"; README reescrito; `roadmap.md`/`AGENTS.md` removidos.
 4. ✅ **Casca do editor: comandos e menus** — `EditorShell` ligado ao `CommandRegistry` real, menus sem ação desabilitados, editores futuros listados com "Disponível na Fase X".
 5. ✅ **Árvore de áreas** — split/resize/join real, persistido em `document.workspaces`.
-6. **Transformação modal G/R/S + histórico navegável** — extrair conversão graus/radianos para `core/`, implementar a máquina de estado G/R/S, painel de histórico.
+6. ✅ **Transformação modal G/R/S + histórico navegável** — conversão graus/radianos extraída para `core/`, máquina de estado G/R/S, painel de histórico.
 7. **Viewport fiel ao Blender** — WebGPU real com fallback verdadeiro, botão do meio/Shift+meio, vistas numéricas + preferência de numpad.
 8. **Correções de UX de trava e erro** — mostrar `holderName` real, desabilitar (não só no-op) controles em somente leitura, estado de erro no painel, campo de validade no link de compartilhamento.
 9. **Fechamento** — completar `docs/licenses.md`, rodar checklist de aceite completo (automatizado + os 15 passos manuais do `docs/fase-0.md`), atualizar este documento com o estado final.

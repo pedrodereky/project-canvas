@@ -39,6 +39,7 @@ import {
 import { useEditorStore } from "./store";
 import { CommandRegistry, type CommandContext } from "@/core/commands";
 import { listAreas } from "@/core/areas";
+import { degToRad, radToDeg } from "@/core/angles";
 import type { AreaNode, AreaType, ProjectDocument, SceneObject, Vec3 } from "@/core/document";
 const Viewport = lazy(() => import("./Viewport"));
 const editorNames: Record<AreaType, string> = {
@@ -76,6 +77,7 @@ export function EditorShell({ projectId }: { projectId: string }) {
     [notice, setNotice] = useState(""),
     [graphics, setGraphics] = useState("Modo compatível — WebGL2"),
     [palette, setPalette] = useState(false),
+    [historyOpen, setHistoryOpen] = useState(false),
     [search, setSearch] = useState("");
   const sessionId = useRef(crypto.randomUUID());
   const document = store.history.present;
@@ -205,6 +207,11 @@ export function EditorShell({ projectId }: { projectId: string }) {
         shortcut: "F3",
         run: () => setPalette(true),
       }),
+      registry.register({
+        id: "history",
+        name: "Histórico",
+        run: () => setHistoryOpen(true),
+      }),
     ];
     return () => unregister.forEach((off) => off());
   }, [registry, store]);
@@ -259,7 +266,7 @@ export function EditorShell({ projectId }: { projectId: string }) {
           />
           <EditorMenu
             label="Editar"
-            ids={["undo", "redo"]}
+            ids={["undo", "redo", "history"]}
             registry={registry}
             context={commandContext}
           />
@@ -441,6 +448,53 @@ export function EditorShell({ projectId }: { projectId: string }) {
                 {c.shortcut && <span className="text-xs text-muted-foreground">{c.shortcut}</span>}
               </button>
             ))}
+          </div>
+        </div>
+      )}
+      {historyOpen && (
+        <div
+          className="fixed inset-0 z-50 flex justify-end bg-foreground/30"
+          onMouseDown={() => setHistoryOpen(false)}
+        >
+          <div
+            className="flex h-full w-72 flex-col border-l bg-popover shadow-xl"
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <header className="flex items-center justify-between border-b px-3 py-2">
+              <h2 className="text-sm font-semibold">Histórico</h2>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-7"
+                aria-label="Fechar histórico"
+                onClick={() => setHistoryOpen(false)}
+              >
+                <X />
+              </Button>
+            </header>
+            <ol className="flex-1 overflow-auto p-2">
+              {(() => {
+                const timeline = [...store.history.past, ...store.history.future];
+                const currentIndex = store.history.past.length - 1;
+                const entries = [{ label: "Estado inicial" }, ...timeline];
+                return entries.map((entry, i) => {
+                  const index = i - 1;
+                  return (
+                    <li key={index}>
+                      <button
+                        className={`block w-full rounded-sm px-3 py-2 text-left text-sm hover:bg-accent ${
+                          index === currentIndex ? "bg-accent font-medium" : ""
+                        }`}
+                        disabled={!store.editable}
+                        onClick={() => store.jumpTo(index)}
+                      >
+                        {entry.label}
+                      </button>
+                    </li>
+                  );
+                });
+              })()}
+            </ol>
           </div>
         </div>
       )}
@@ -666,12 +720,15 @@ function Outliner() {
 }
 function Properties() {
   const doc = useEditorStore((s) => s.history.present),
+    preview = useEditorStore((s) => s.transformPreview),
     setVector = useEditorStore((s) => s.setVector);
-  const o = doc.scene.objects.find((x) => x.id === doc.selection[0]);
-  if (!o)
+  const found = doc.scene.objects.find((x) => x.id === doc.selection[0]);
+  if (!found)
     return (
       <div className="grid h-full place-items-center text-muted-foreground">Nada selecionado</div>
     );
+  // Reflects a G/R/S drag still in progress in the Viewport, live.
+  const o = preview?.id === found.id ? { ...found, [preview.key]: preview.value } : found;
   return (
     <div className="p-3">
       <h3 className="mb-4 font-semibold">{o.name}</h3>
@@ -708,11 +765,11 @@ function VectorFields({
             <input
               type="number"
               step="0.1"
-              value={field === "rotation" ? ((v * 180) / Math.PI).toFixed(1) : v}
+              value={field === "rotation" ? radToDeg(v).toFixed(1) : v}
               onChange={(e) => {
                 const n = Number(e.target.value);
                 const next = [...object[field]] as Vec3;
-                next[i] = field === "rotation" ? (n * Math.PI) / 180 : n;
+                next[i] = field === "rotation" ? degToRad(n) : n;
                 set(object.id, field, next);
               }}
               className="mt-1 w-full rounded-sm border bg-background px-2 py-1"

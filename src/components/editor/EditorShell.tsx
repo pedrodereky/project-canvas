@@ -9,11 +9,15 @@ import {
   EyeOff,
   Loader2,
   Maximize2,
+  Minimize2,
   Plus,
   RotateCcw,
   Save,
   Share2,
+  SplitSquareHorizontal,
+  SplitSquareVertical,
   Trash2,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
@@ -34,7 +38,8 @@ import {
 } from "@/lib/projects.functions";
 import { useEditorStore } from "./store";
 import { CommandRegistry, type CommandContext } from "@/core/commands";
-import type { AreaType, ProjectDocument, SceneObject, Vec3 } from "@/core/document";
+import { listAreas } from "@/core/areas";
+import type { AreaNode, AreaType, ProjectDocument, SceneObject, Vec3 } from "@/core/document";
 const Viewport = lazy(() => import("./Viewport"));
 const editorNames: Record<AreaType, string> = {
   viewport: "Viewport 3D",
@@ -66,7 +71,7 @@ export function EditorShell({ projectId }: { projectId: string }) {
       null,
     ),
     [loading, setLoading] = useState(true),
-    [areas, setAreas] = useState<AreaType[]>(["viewport", "outliner", "properties"]),
+    [maximizedAreaId, setMaximizedAreaId] = useState<string | null>(null),
     [lock, setLock] = useState<"owned" | "other" | "self" | "readonly">("readonly"),
     [notice, setNotice] = useState(""),
     [graphics, setGraphics] = useState("Modo compatível — WebGL2"),
@@ -364,19 +369,29 @@ export function EditorShell({ projectId }: { projectId: string }) {
           Em edição por outra pessoa · somente leitura
         </div>
       )}
-      <ResizablePanelGroup orientation="horizontal" className="min-h-0 flex-1">
-        {areas.map((type, i) => (
-          <span className="contents" key={`${type}-${i}`}>
-            <ResizablePanel minSize={15}>
-              <EditorArea
-                type={type}
-                setType={(value) => setAreas((a) => a.map((x, n) => (n === i ? value : x)))}
-              />
-            </ResizablePanel>
-            {i < areas.length - 1 && <ResizableHandle />}
-          </span>
-        ))}
-      </ResizablePanelGroup>
+      <div className="min-h-0 flex-1">
+        {(() => {
+          const workspace =
+            document.workspaces.find((w) => w.id === document.activeWorkspaceId) ??
+            document.workspaces[0]!;
+          const maximized = maximizedAreaId
+            ? listAreas(workspace.layout).find((a) => a.id === maximizedAreaId)
+            : undefined;
+          return maximized ? (
+            <EditorArea
+              area={maximized}
+              hasParent
+              maximized
+              onMaximize={() => setMaximizedAreaId(null)}
+              onSplit={() => {}}
+              onJoin={() => {}}
+              onSetEditor={(editor) => store.setAreaEditor(maximized.id, editor)}
+            />
+          ) : (
+            <AreaTree node={workspace.layout} hasParent={false} onMaximize={setMaximizedAreaId} />
+          );
+        })()}
+      </div>
       <footer className="flex h-7 shrink-0 items-center border-t bg-card px-3 text-xs text-muted-foreground">
         <span className="font-medium text-foreground">{project.name}</span>
         <span className="mx-3">
@@ -460,15 +475,80 @@ function EditorMenu({
     </DropdownMenu>
   );
 }
-function EditorArea({ type, setType }: { type: AreaType; setType: (v: AreaType) => void }) {
+function AreaTree({
+  node,
+  hasParent,
+  onMaximize,
+}: {
+  node: AreaNode;
+  hasParent: boolean;
+  onMaximize: (id: string) => void;
+}) {
+  const split = useEditorStore((s) => s.splitArea);
+  const join = useEditorStore((s) => s.joinArea);
+  const setEditor = useEditorStore((s) => s.setAreaEditor);
+  const resize = useEditorStore((s) => s.resizeSplit);
+  if (node.kind === "area") {
+    return (
+      <EditorArea
+        area={node}
+        hasParent={hasParent}
+        onMaximize={() => onMaximize(node.id)}
+        onSplit={(direction) => split(node.id, direction)}
+        onJoin={() => join(node.id)}
+        onSetEditor={(editor) => setEditor(node.id, editor)}
+      />
+    );
+  }
+  return (
+    <ResizablePanelGroup
+      orientation={node.direction}
+      className="h-full min-h-0"
+      onLayoutChanged={(layout, meta) => {
+        // Skip the mount/programmatic firing — only persist drags the user actually made.
+        if (meta.isUserInteraction) resize(node.id, layout);
+      }}
+    >
+      {node.children.map((child, i) => (
+        <span className="contents" key={child.id}>
+          {i > 0 && <ResizableHandle />}
+          <ResizablePanel
+            id={child.id}
+            defaultSize={String(child.size ?? 100 / node.children.length)}
+            minSize="10"
+          >
+            <AreaTree node={child} hasParent onMaximize={onMaximize} />
+          </ResizablePanel>
+        </span>
+      ))}
+    </ResizablePanelGroup>
+  );
+}
+function EditorArea({
+  area,
+  hasParent,
+  maximized = false,
+  onMaximize,
+  onSplit,
+  onJoin,
+  onSetEditor,
+}: {
+  area: Extract<AreaNode, { kind: "area" }>;
+  hasParent: boolean;
+  maximized?: boolean;
+  onMaximize: () => void;
+  onSplit: (direction: "horizontal" | "vertical") => void;
+  onJoin: () => void;
+  onSetEditor: (editor: AreaType) => void;
+}) {
   return (
     <section className="flex h-full min-h-0 flex-col bg-background">
       <header className="flex h-8 shrink-0 items-center border-b bg-card px-1">
         <label className="relative">
           <select
             className="h-7 appearance-none bg-transparent pl-2 pr-7 text-xs font-medium outline-none"
-            value={type}
-            onChange={(e) => setType(e.target.value as AreaType)}
+            value={area.editor}
+            onChange={(e) => onSetEditor(e.target.value as AreaType)}
           >
             {Object.entries(editorNames).map(([v, n]) => (
               <option value={v} key={v}>
@@ -483,12 +563,53 @@ function EditorArea({ type, setType }: { type: AreaType; setType: (v: AreaType) 
           </select>
           <ChevronDown className="pointer-events-none absolute right-1 top-1.5 size-3" />
         </label>
-        <Button variant="ghost" size="icon" className="ml-auto size-7" aria-label="Maximizar área">
-          <Maximize2 />
+        {!maximized && (
+          <>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="ml-auto size-7"
+              aria-label="Dividir na horizontal"
+              title="Dividir na horizontal"
+              onClick={() => onSplit("horizontal")}
+            >
+              <SplitSquareHorizontal />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-7"
+              aria-label="Dividir na vertical"
+              title="Dividir na vertical"
+              onClick={() => onSplit("vertical")}
+            >
+              <SplitSquareVertical />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-7"
+              aria-label="Juntar com área vizinha"
+              title="Juntar com área vizinha"
+              onClick={onJoin}
+              disabled={!hasParent}
+            >
+              <X />
+            </Button>
+          </>
+        )}
+        <Button
+          variant="ghost"
+          size="icon"
+          className={maximized ? "ml-auto size-7" : "size-7"}
+          aria-label={maximized ? "Restaurar área" : "Maximizar área"}
+          onClick={onMaximize}
+        >
+          {maximized ? <Minimize2 /> : <Maximize2 />}
         </Button>
       </header>
       <div className="min-h-0 flex-1">
-        {type === "viewport" ? (
+        {area.editor === "viewport" ? (
           <Suspense
             fallback={
               <div className="grid h-full place-items-center bg-muted">Carregando viewport…</div>
@@ -496,7 +617,7 @@ function EditorArea({ type, setType }: { type: AreaType; setType: (v: AreaType) 
           >
             <Viewport />
           </Suspense>
-        ) : type === "outliner" ? (
+        ) : area.editor === "outliner" ? (
           <Outliner />
         ) : (
           <Properties />

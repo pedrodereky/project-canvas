@@ -13,7 +13,13 @@ export type SceneObject = {
 export type AreaType = "viewport" | "outliner" | "properties";
 export type AreaNode =
   | { kind: "area"; id: string; editor: AreaType; size?: number | undefined }
-  | { kind: "split"; id: string; direction: "horizontal" | "vertical"; children: AreaNode[] };
+  | {
+      kind: "split";
+      id: string;
+      direction: "horizontal" | "vertical";
+      children: AreaNode[];
+      size?: number | undefined;
+    };
 export type ProjectDocument = {
   schemaVersion: 1;
   scene: { objects: SceneObject[] };
@@ -45,6 +51,7 @@ const areaSchema: z.ZodType<AreaNode> = z.lazy(() =>
       id: z.string(),
       direction: z.enum(["horizontal", "vertical"]),
       children: z.array(areaSchema).min(2),
+      size: z.number().optional(),
     }),
   ]),
 );

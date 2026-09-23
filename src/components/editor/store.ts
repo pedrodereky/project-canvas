@@ -1,6 +1,18 @@
 import { create } from "zustand";
 import { createHistory, change, undo, redo, type History } from "@/core/history";
-import { createDocument, type ProjectDocument, type SceneObject, type Vec3 } from "@/core/document";
+import {
+  createDocument,
+  type AreaType,
+  type ProjectDocument,
+  type SceneObject,
+  type Vec3,
+} from "@/core/document";
+import {
+  joinArea as joinAreaNode,
+  resizeSplit as resizeSplitNode,
+  setAreaEditor as setAreaEditorNode,
+  splitArea as splitAreaNode,
+} from "@/core/areas";
 
 type EditorState = {
   history: History<ProjectDocument>;
@@ -16,6 +28,10 @@ type EditorState = {
   toggleVisible: (id: string) => void;
   rename: (id: string, name: string) => void;
   setVector: (id: string, key: "position" | "rotation" | "scale", value: Vec3) => void;
+  splitArea: (areaId: string, direction: "horizontal" | "vertical") => void;
+  joinArea: (areaId: string) => void;
+  setAreaEditor: (areaId: string, editor: AreaType) => void;
+  resizeSplit: (splitId: string, sizes: Record<string, number>) => void;
   undo: () => void;
   redo: () => void;
 };
@@ -86,6 +102,46 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       dirty: true,
     }));
   },
+  // Layout actions run regardless of `editable`: readers may rearrange areas for
+  // their own session, but persist() only ever saves while the caller holds the
+  // lock, so a non-owner's changes never reach the server (spec: layout changes
+  // in read-only mode are session-only and revert on reload).
+  splitArea: (areaId, direction) =>
+    set((s) => ({
+      history: change(s.history, "Dividir área", (d) => {
+        const ws = d.workspaces.find((w) => w.id === d.activeWorkspaceId);
+        if (!ws) return;
+        ws.layout = splitAreaNode(ws.layout, areaId, direction, {
+          splitId: crypto.randomUUID(),
+          newAreaId: crypto.randomUUID(),
+        });
+      }),
+      dirty: true,
+    })),
+  joinArea: (areaId) =>
+    set((s) => ({
+      history: change(s.history, "Juntar áreas", (d) => {
+        const ws = d.workspaces.find((w) => w.id === d.activeWorkspaceId);
+        if (ws) ws.layout = joinAreaNode(ws.layout, areaId);
+      }),
+      dirty: true,
+    })),
+  setAreaEditor: (areaId, editor) =>
+    set((s) => ({
+      history: change(s.history, "Trocar editor da área", (d) => {
+        const ws = d.workspaces.find((w) => w.id === d.activeWorkspaceId);
+        if (ws) ws.layout = setAreaEditorNode(ws.layout, areaId, editor);
+      }),
+      dirty: true,
+    })),
+  resizeSplit: (splitId, sizes) =>
+    set((s) => ({
+      history: change(s.history, "Redimensionar área", (d) => {
+        const ws = d.workspaces.find((w) => w.id === d.activeWorkspaceId);
+        if (ws) ws.layout = resizeSplitNode(ws.layout, splitId, sizes);
+      }),
+      dirty: true,
+    })),
   undo: () => {
     if (get().editable) set((s) => ({ history: undo(s.history), dirty: true }));
   },

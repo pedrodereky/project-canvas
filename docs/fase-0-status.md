@@ -51,14 +51,18 @@ Legenda: ✅ Feito · 🟡 Parcial · ❌ Faltando
 
 ## 6. Documento e workspaces
 
-❌ **Gap grande**: `EditorShell.tsx` mantém `areas` como `useState` local plano, desconectado da árvore recursiva `workspaces[].layout` que já existe em `src/core/document.ts`. Não há split vertical/horizontal real, não há "juntar áreas", e o layout não é salvo nem restaurado do documento. O teste de aceite "dividir em 3 áreas, trocar uma para Outliner e recarregar" falha hoje.
+✅ **(etapa 5)** `EditorShell` agora renderiza `document.workspaces[activeWorkspaceId].layout` de verdade, através de `src/core/areas.ts` (`splitArea`, `joinArea`, `setAreaEditor`, `resizeSplit`, puras e testadas em `areas.test.ts`) e novas ações no `store.ts`. Split horizontal/vertical, juntar área vizinha, trocar o editor e redimensionar (arrastando o `ResizableHandle`) alteram o documento de verdade e persistem por autosave; `onLayoutChanged` só grava quando `meta.isUserInteraction` é `true`, então montar a tela não marca o documento como sujo à toa.
+
+⚠️ **Mudança de comportamento**: como o documento inicial (`createDocument()`) sempre teve só uma área (`viewport-main`), projetos — novos e já existentes — agora abrem com um único Viewport 3D em vez do layout fixo de 3 painéis que a tela mostrava antes (esse fixo nunca vinha do documento, era um `useState` local ignorando o schema). Bate com o próprio teste de aceite do `fase-0.md` ("dividir o viewport em 3 áreas"), mas é visualmente diferente do que existia até a etapa 4.
+
+🟡 Leitura/permissão: as ações de layout **não** são bloqueadas por `editable` (diferente de mover objetos) — de propósito, porque a spec permite reorganizar o layout mesmo em modo leitura, contanto que não persista. Isso funciona hoje porque `persist()` só grava quando `lock === "owned"`; não criei um caminho local separado para isso.
 
 ## 7. Casca do editor e áreas
 
 - ✅ **(etapa 4)** Menus **Arquivo** (Salvar, Baixar cópia) e **Editar** (Desfazer, Refazer) viram dropdowns reais alimentados pelo `CommandRegistry`; **Adicionar** (Cubo/Esfera/Plano) idem; **Ajuda** abre a paleta F3. **Visualizar** e **Janela** ficam desabilitados (nada implementado ainda nesta fase — split de áreas é a etapa 5, vistas numéricas é a etapa 7); "Novo workspace" também desabilitado em vez de disparar `alert(...)`.
 - ✅ **(etapa 4)** Editores futuros (Moldes 2D, Tabela de Medidas, Nós, Console Python) agora aparecem no seletor de área, desabilitados, com o aviso "Disponível na Fase X".
 - ✅ **(etapa 4)** Botão Salvar do cabeçalho fica `disabled` em modo leitura, em vez de no-op silencioso.
-- 🟡 Continua faltando: o botão "Maximizar área" de cada painel não tem ação (fica para a etapa 5, junto da árvore de áreas).
+- ✅ **(etapa 5)** O botão "Maximizar área" agora funciona (mostra só aquela área em tela cheia, com um botão para restaurar); "juntar" fica desabilitado quando a área não tem uma vizinha (é a única área do workspace).
 
 ## 8. Viewport, seleção e propriedades
 
@@ -82,7 +86,7 @@ Legenda: ✅ Feito · 🟡 Parcial · ❌ Faltando
 
 ## 11. Testes
 
-✅ existem e passam: registro de comandos (isolado), undo/redo, unidades mm↔m, `can()`, migração do documento (5/5 testes, `bun run test`).
+✅ existem e passam: registro de comandos (isolado), undo/redo, unidades mm↔m, `can()`, migração do documento, split/join/redimensionar/trocar editor da árvore de áreas (12/12 testes, `bun run test`).
 
 ❌ Falta teste de conversão graus/radianos — a lógica está inline em `EditorShell.tsx`, deveria estar em `core/` como as demais regras de domínio.
 
@@ -118,7 +122,7 @@ Legenda: ✅ Feito · 🟡 Parcial · ❌ Faltando
 2. ✅ **Desacoplar login do Lovable** — trocar Google OAuth para `supabase.auth.signInWithOAuth`, remover `src/integrations/lovable/`, adicionar recuperação de senha.
 3. ✅ **Limpeza de resíduos** — removidos `.lovable/`, `drizzle/*`, dependências mortas do Lovable, headers "auto-generated"; README reescrito; `roadmap.md`/`AGENTS.md` removidos.
 4. ✅ **Casca do editor: comandos e menus** — `EditorShell` ligado ao `CommandRegistry` real, menus sem ação desabilitados, editores futuros listados com "Disponível na Fase X".
-5. **Árvore de áreas** — split/resize/join real, persistido em `document.workspaces`.
+5. ✅ **Árvore de áreas** — split/resize/join real, persistido em `document.workspaces`.
 6. **Transformação modal G/R/S + histórico navegável** — extrair conversão graus/radianos para `core/`, implementar a máquina de estado G/R/S, painel de histórico.
 7. **Viewport fiel ao Blender** — WebGPU real com fallback verdadeiro, botão do meio/Shift+meio, vistas numéricas + preferência de numpad.
 8. **Correções de UX de trava e erro** — mostrar `holderName` real, desabilitar (não só no-op) controles em somente leitura, estado de erro no painel, campo de validade no link de compartilhamento.

@@ -51,5 +51,6 @@ export function redo<T extends object>(history: History<T>): History<T> {
 export function jumpTo<T extends object>(history: History<T>, index: number): History<T> {
   let next = history;
   while (next.past.length - 1 > index) next = undo(next);
+  while (next.past.length - 1 < index && next.future.length) next = redo(next);
   return next;
 }

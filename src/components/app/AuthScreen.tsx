@@ -89,22 +89,38 @@ export function AuthScreen() {
   return (
     <main className="grid min-h-screen bg-background lg:grid-cols-[1.05fr_.95fr]">
       <section className="relative hidden overflow-hidden border-r border-border bg-sidebar lg:flex lg:flex-col lg:justify-between p-12">
-        <div className="flex items-center gap-3 text-lg font-semibold">
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-0 flex select-none items-center justify-center font-display text-[46rem] leading-none text-foreground/[0.04]"
+        >
+          F
+        </span>
+        <div className="relative flex items-center gap-3 text-lg font-semibold">
           <span className="grid size-9 place-items-center rounded-md bg-primary text-primary-foreground">
             <Box className="size-5" />
           </span>
-          Forma
+          <span className="tracking-[0.2em]">FORMA</span>
         </div>
-        <div className="max-w-xl">
-          <p className="mb-4 text-sm font-medium uppercase text-primary">Modelagem colaborativa</p>
-          <h1 className="text-5xl font-semibold leading-tight">
-            Um espaço preciso para dar forma às suas ideias.
+        <div className="relative max-w-xl">
+          <p className="mb-3 text-xs font-medium uppercase tracking-[0.35em] text-primary">
+            Modelagem colaborativa
+          </p>
+          <h1 className="font-display text-6xl uppercase leading-[0.95]">
+            Dê forma <span className="text-primary">às suas ideias.</span>
           </h1>
-          <p className="mt-6 max-w-lg text-lg text-muted-foreground">
+          <p className="mt-6 max-w-lg text-muted-foreground">
             Organize projetos, colabore com sua equipe e trabalhe em um editor 3D criado para a web.
           </p>
         </div>
-        <p className="text-sm text-muted-foreground">Fase 0 · Fundação</p>
+        <div className="relative inline-flex flex-col items-start gap-2">
+          <span className="text-[10px] uppercase tracking-[0.35em] text-muted-foreground">
+            ‹ Em desenvolvimento ›
+          </span>
+          <div className="rounded-xl border border-border bg-card px-5 py-3">
+            <p className="text-sm font-semibold">Fase 0</p>
+            <p className="text-xs text-muted-foreground">Fundação do produto</p>
+          </div>
+        </div>
       </section>
       <section className="flex items-center justify-center p-6">
         <div className="w-full max-w-sm">
@@ -112,11 +128,11 @@ export function AuthScreen() {
             <span className="grid size-9 place-items-center rounded-md bg-primary text-primary-foreground">
               <Box className="size-5" />
             </span>
-            Forma
+            <span className="tracking-[0.2em]">FORMA</span>
           </div>
           {recovery ? (
             <>
-              <h2 className="text-3xl font-semibold">Defina uma nova senha</h2>
+              <h2 className="font-display text-4xl uppercase">Defina uma nova senha</h2>
               <p className="mt-2 text-muted-foreground">Escolha a nova senha da sua conta.</p>
               <form onSubmit={confirmNewPassword} className="mt-8 space-y-4">
                 <label className="block text-sm font-medium">
@@ -151,7 +167,7 @@ export function AuthScreen() {
             </>
           ) : mode === "forgot" ? (
             <>
-              <h2 className="text-3xl font-semibold">Recuperar senha</h2>
+              <h2 className="font-display text-4xl uppercase">Recuperar senha</h2>
               <p className="mt-2 text-muted-foreground">
                 Informe seu e-mail para receber o link de redefinição.
               </p>
@@ -186,7 +202,7 @@ export function AuthScreen() {
             </>
           ) : (
             <>
-              <h2 className="text-3xl font-semibold">
+              <h2 className="font-display text-4xl uppercase">
                 {mode === "login" ? "Boas-vindas" : "Crie sua conta"}
               </h2>
               <p className="mt-2 text-muted-foreground">
@@ -202,7 +218,7 @@ export function AuthScreen() {
               >
                 Continuar com Google
               </Button>
-              <div className="my-6 flex items-center gap-3 text-xs text-muted-foreground">
+              <div className="my-6 flex items-center gap-3 text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
                 <span className="h-px flex-1 bg-border" />
                 ou use seu e-mail
                 <span className="h-px flex-1 bg-border" />

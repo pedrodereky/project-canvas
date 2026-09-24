@@ -108,7 +108,7 @@ export function ProjectsDashboard() {
             <span className="grid size-8 place-items-center rounded-md bg-primary text-primary-foreground">
               <Box className="size-4" />
             </span>
-            Forma
+            <span className="tracking-[0.2em]">FORMA</span>
           </div>
           <div className="ml-auto flex items-center gap-2">
             <Button
@@ -128,8 +128,10 @@ export function ProjectsDashboard() {
       <section className="mx-auto max-w-7xl px-5 py-10">
         <div className="flex flex-wrap items-end justify-between gap-5">
           <div>
-            <p className="text-sm text-muted-foreground">Seu espaço de trabalho</p>
-            <h1 className="mt-1 text-3xl font-semibold">Projetos</h1>
+            <p className="text-xs uppercase tracking-[0.3em] text-primary">
+              Seu espaço de trabalho
+            </p>
+            <h1 className="mt-2 font-display text-5xl uppercase">Projetos</h1>
           </div>
           <Button onClick={add}>
             <FolderPlus />
@@ -154,13 +156,13 @@ export function ProjectsDashboard() {
         <div className="mt-9 flex border-b">
           <button
             onClick={() => setTab("mine")}
-            className={`px-1 pb-3 mr-7 text-sm font-medium ${tab === "mine" ? "border-b-2 border-primary text-foreground" : "text-muted-foreground"}`}
+            className={`px-1 pb-3 mr-7 text-xs font-medium uppercase tracking-[0.2em] ${tab === "mine" ? "border-b-2 border-primary text-foreground" : "text-muted-foreground"}`}
           >
             Meus projetos
           </button>
           <button
             onClick={() => setTab("shared")}
-            className={`px-1 pb-3 text-sm font-medium ${tab === "shared" ? "border-b-2 border-primary text-foreground" : "text-muted-foreground"}`}
+            className={`px-1 pb-3 text-xs font-medium uppercase tracking-[0.2em] ${tab === "shared" ? "border-b-2 border-primary text-foreground" : "text-muted-foreground"}`}
           >
             Compartilhados comigo
           </button>
@@ -215,7 +217,7 @@ export function ProjectsDashboard() {
                       new Date(p.updatedAt),
                     )}
                   </p>
-                  <span className="mt-4 inline-block rounded-sm bg-secondary px-2 py-1 text-xs font-medium">
+                  <span className="mt-4 inline-block rounded-sm bg-secondary px-2 py-1 text-[10px] font-medium uppercase tracking-[0.15em]">
                     {roles[p.role]}
                   </span>
                 </button>

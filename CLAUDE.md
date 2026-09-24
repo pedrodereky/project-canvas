@@ -1,4 +1,4 @@
-# Forma
+# Wasabii Art
 
 Software web comercial de modelagem 3D de vestuário para moda e produção: moldes 2D → costura → simulação física do tecido sobre avatar → gradação, medidas e ficha técnica. Interface e fluxo inspirados no Blender (áreas divisíveis, atalhos, busca de comandos, nós, modificadores, scripts Python). Venda por assinatura; uso individual e em equipe.
 
@@ -76,7 +76,7 @@ Software web comercial de modelagem 3D de vestuário para moda e produção: mol
 Referência: sites editoriais/de artista com fotografia dramática e tipografia como elemento de composição — não um dashboard SaaS genérico. Vale para o sistema inteiro, incluindo o editor, mas adaptado à densidade de cada tela (ver último item).
 
 - Fundo neutro quase preto (não cinza-azulado de admin). Muita área negativa contrastando com poucos blocos de informação densa.
-- Uma única cor de destaque em todo o produto: o verde já usado na marca "Forma", num tom vivo o bastante para funcionar como bloco sólido (não só contorno) sobre o fundo escuro. Reservada para a ação principal de cada tela e para foco/seleção; nunca introduzir uma segunda cor de destaque.
+- Uma única cor de destaque em todo o produto: o verde já usado na marca "Wasabii Art", num tom vivo o bastante para funcionar como bloco sólido (não só contorno) sobre o fundo escuro. Reservada para a ação principal de cada tela e para foco/seleção; nunca introduzir uma segunda cor de destaque.
 - Par tipográfico: uma fonte de exibição condensada e pesada para títulos, wordmark e números de destaque; uma fonte de interface neutra para todo o resto, incluindo o editor denso. Rótulos secundários (navegação, abas, eyebrows) em caixa alta com tracking aberto.
 - Elementos de composição a reaproveitar onde fizer sentido: rótulos girados/em arco como assinatura decorativa; cartões "flutuantes" com cantos arredondados e fundo translúcido para informação contextual; bloco de cor sólida (não só contorno) na ação mais importante da tela.
 - No editor, essa linguagem vale para cor, tipografia e cantos — não para o tamanho dos elementos. Outliner, propriedades e barra de status continuam compactos e de alta densidade, fonte de interface 12–13px, como pede a Fase 0. Tipografia grande e composição editorial ficam para telas de vitrine (entrada, painel de projetos), não para dentro das áreas de trabalho.

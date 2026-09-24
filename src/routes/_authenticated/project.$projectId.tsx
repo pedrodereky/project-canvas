@@ -7,9 +7,9 @@ export const Route = createFileRoute("/_authenticated/project/$projectId")({
   }),
   head: () => ({
     meta: [
-      { title: "Editor | Forma" },
+      { title: "Editor | Wasabii Art" },
       { name: "description", content: "Editor colaborativo de projetos 3D." },
-      { property: "og:title", content: "Editor | Forma" },
+      { property: "og:title", content: "Editor | Wasabii Art" },
       { property: "og:description", content: "Editor colaborativo de projetos 3D." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

@@ -1,4 +1,4 @@
-# Forma
+# Wasabii Art
 
 Software web de modelagem 3D de vestuário para moda e produção: moldes 2D → costura → simulação física do tecido sobre avatar → gradação, medidas e ficha técnica.
 

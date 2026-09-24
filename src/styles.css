@@ -11,7 +11,7 @@
  * classes (e.g. --color-primary -> bg-primary, text-primary).
  *
  * :root defines the actual color values using oklch, and is the only theme
- * — Forma is dark by design (see CLAUDE.md "Identidade visual"), there is no
+ * — Wasabii Art is dark by design (see CLAUDE.md "Identidade visual"), there is no
  * light/dark toggle. All colors MUST use oklch format.
  *
  * To add a new semantic color:

@@ -9,10 +9,10 @@ export const Route = createFileRoute("/auth")({
   }),
   head: () => ({
     meta: [
-      { title: "Entrar | Forma" },
-      { name: "description", content: "Entre ou crie sua conta no Forma." },
-      { property: "og:title", content: "Entrar | Forma" },
-      { property: "og:description", content: "Entre ou crie sua conta no Forma." },
+      { title: "Wasabii Art" },
+      { name: "description", content: "Entre ou crie sua conta na Wasabii Art." },
+      { property: "og:title", content: "Wasabii Art" },
+      { property: "og:description", content: "Entre ou crie sua conta na Wasabii Art." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],

@@ -5,9 +5,9 @@ export const Route = createFileRoute("/")({
   },
   head: () => ({
     meta: [
-      { title: "Forma — Modelagem colaborativa" },
+      { title: "Wasabii Art — Modelagem colaborativa" },
       { name: "description", content: "Crie e compartilhe projetos de modelagem 3D no navegador." },
-      { property: "og:title", content: "Forma — Modelagem colaborativa" },
+      { property: "og:title", content: "Wasabii Art — Modelagem colaborativa" },
       {
         property: "og:description",
         content: "Crie e compartilhe projetos de modelagem 3D no navegador.",

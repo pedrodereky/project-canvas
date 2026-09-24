@@ -78,10 +78,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Forma" },
+      { title: "Wasabii Art" },
       { name: "description", content: "Modelagem 3D colaborativa no navegador." },
-      { name: "author", content: "Forma" },
-      { property: "og:title", content: "Forma" },
+      { name: "author", content: "Wasabii Art" },
+      { property: "og:title", content: "Wasabii Art" },
       { property: "og:description", content: "Modelagem 3D colaborativa no navegador." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

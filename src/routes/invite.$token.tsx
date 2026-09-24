@@ -9,12 +9,15 @@ export const Route = createFileRoute("/invite/$token")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Aceitar convite | Forma" },
-      { name: "description", content: "Aceite um convite para colaborar em um projeto Forma." },
-      { property: "og:title", content: "Aceitar convite | Forma" },
+      { title: "Aceitar convite | Wasabii Art" },
+      {
+        name: "description",
+        content: "Aceite um convite para colaborar em um projeto da Wasabii Art.",
+      },
+      { property: "og:title", content: "Aceitar convite | Wasabii Art" },
       {
         property: "og:description",
-        content: "Aceite um convite para colaborar em um projeto Forma.",
+        content: "Aceite um convite para colaborar em um projeto da Wasabii Art.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

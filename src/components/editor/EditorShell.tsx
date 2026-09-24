@@ -285,7 +285,7 @@ export function EditorShell({ projectId }: { projectId: string }) {
           <span className="grid size-7 place-items-center rounded bg-primary text-primary-foreground">
             <Box className="size-4" />
           </span>
-          Forma
+          <span className="tracking-[0.2em]">FORMA</span>
         </Link>
         <nav className="flex h-full items-center">
           <EditorMenu
@@ -313,7 +313,7 @@ export function EditorShell({ projectId }: { projectId: string }) {
             context={commandContext}
           />
           <button
-            className="h-full px-3 text-muted-foreground/50"
+            className="h-full px-3 text-xs uppercase tracking-wide text-muted-foreground/50"
             disabled
             title="Em construção nesta fase"
           >
@@ -354,7 +354,7 @@ export function EditorShell({ projectId }: { projectId: string }) {
         )}
       </header>
       <div className="flex h-9 shrink-0 items-end border-b bg-sidebar px-2">
-        <button className="h-8 border-x border-t bg-background px-5 text-xs font-medium">
+        <button className="h-8 border-x border-t bg-background px-5 text-xs font-medium uppercase tracking-wide">
           Modelagem
         </button>
         <Button
@@ -430,15 +430,15 @@ export function EditorShell({ projectId }: { projectId: string }) {
       </div>
       <footer className="flex h-7 shrink-0 items-center border-t bg-card px-3 text-xs text-muted-foreground">
         <span className="font-medium text-foreground">{project.name}</span>
-        <span className="mx-3">
+        <span className="mx-3 uppercase tracking-wide">
           {store.saveState === "saved"
             ? "Salvo"
             : store.saveState === "saving"
               ? "Salvando…"
               : "Erro — tentar novamente"}
         </span>
-        <span className="ml-auto">{store.graphicsMode}</span>
-        <span className="ml-4">{roleNames[project.role]}</span>
+        <span className="ml-auto uppercase tracking-wide">{store.graphicsMode}</span>
+        <span className="ml-4 uppercase tracking-wide">{roleNames[project.role]}</span>
       </footer>
       {palette && (
         <div
@@ -545,7 +545,7 @@ function EditorMenu({
   const items = registry.list(context).filter((c) => ids.includes(c.id));
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className="h-full px-3 outline-none hover:bg-accent">
+      <DropdownMenuTrigger className="h-full px-3 text-xs uppercase tracking-wide outline-none hover:bg-accent">
         {label}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">

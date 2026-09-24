@@ -106,9 +106,9 @@ export function AuthScreen() {
       <div className="absolute inset-0 bg-gradient-to-r from-background/80 via-transparent to-background/40" />
       <span
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-[6%] select-none text-center font-display text-[16rem] uppercase leading-none text-foreground/[0.06] sm:text-[24rem]"
+        className="pointer-events-none absolute inset-x-0 top-[16%] select-none whitespace-nowrap text-center font-display text-[15vw] uppercase leading-none text-foreground/[0.09]"
       >
-        W
+        WASABII
       </span>
 
       <header className="relative z-10 flex items-center justify-between px-6 py-6 sm:px-12">

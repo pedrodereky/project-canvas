@@ -2,14 +2,17 @@ import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useNavigate } from "@tanstack/react-router";
 import {
+  AlertTriangle,
   Box,
   Copy,
   FolderPlus,
   LogOut,
   MoreHorizontal,
   Pencil,
+  RotateCcw,
   Share2,
   Trash2,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -40,12 +43,20 @@ export function ProjectsDashboard() {
   const [items, setItems] = useState<Project[]>([]),
     [tab, setTab] = useState<"mine" | "shared">("mine"),
     [busy, setBusy] = useState(true),
+    [loadError, setLoadError] = useState<string | null>(null),
+    [actionError, setActionError] = useState<string | null>(null),
     [menu, setMenu] = useState<string | null>(null);
   async function refresh() {
     setBusy(true);
-    await boot();
-    setItems(await get());
-    setBusy(false);
+    setLoadError(null);
+    try {
+      await boot();
+      setItems(await get());
+    } catch {
+      setLoadError("Não foi possível carregar seus projetos.");
+    } finally {
+      setBusy(false);
+    }
   }
   useEffect(() => {
     void refresh();
@@ -54,28 +65,40 @@ export function ProjectsDashboard() {
     () => items.filter((p) => (tab === "mine" ? p.role === "owner" : p.role !== "owner")),
     [items, tab],
   );
+  async function runAction(message: string, action: () => Promise<void>) {
+    setActionError(null);
+    try {
+      await action();
+    } catch {
+      setActionError(message);
+    }
+  }
   async function add() {
     const name = prompt("Nome do projeto", "Projeto sem título");
     if (!name) return;
-    const p = await create({ data: { name } });
-    void navigate({
-      to: "/project/$projectId",
-      params: { projectId: p.id },
-      search: { share: false },
+    await runAction("Não foi possível criar o projeto.", async () => {
+      const p = await create({ data: { name } });
+      void navigate({
+        to: "/project/$projectId",
+        params: { projectId: p.id },
+        search: { share: false },
+      });
     });
   }
   async function doRename(p: Project) {
     const name = prompt("Novo nome", p.name);
-    if (name) {
+    if (!name) return;
+    await runAction("Não foi possível renomear o projeto.", async () => {
       await rename({ data: { id: p.id, name } });
       await refresh();
-    }
+    });
   }
   async function doDelete(p: Project) {
-    if (confirm(`Excluir “${p.name}”? Esta ação não pode ser desfeita.`)) {
+    if (!confirm(`Excluir “${p.name}”? Esta ação não pode ser desfeita.`)) return;
+    await runAction("Não foi possível excluir o projeto.", async () => {
       await remove({ data: { id: p.id } });
       await refresh();
-    }
+    });
   }
   return (
     <main className="min-h-screen bg-background">
@@ -113,6 +136,21 @@ export function ProjectsDashboard() {
             Novo projeto
           </Button>
         </div>
+        {actionError && (
+          <div className="mt-5 flex items-center gap-3 rounded-md border border-destructive/30 bg-destructive/10 px-4 py-2 text-sm">
+            <AlertTriangle className="size-4 shrink-0 text-destructive" />
+            <span className="flex-1">{actionError}</span>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-7"
+              aria-label="Dispensar"
+              onClick={() => setActionError(null)}
+            >
+              <X />
+            </Button>
+          </div>
+        )}
         <div className="mt-9 flex border-b">
           <button
             onClick={() => setTab("mine")}
@@ -129,6 +167,15 @@ export function ProjectsDashboard() {
         </div>
         {busy ? (
           <p className="py-16 text-center text-muted-foreground">Carregando projetos…</p>
+        ) : loadError ? (
+          <div className="py-20 text-center">
+            <AlertTriangle className="mx-auto size-10 text-destructive" />
+            <h2 className="mt-4 font-semibold">{loadError}</h2>
+            <Button variant="outline" className="mt-4" onClick={() => void refresh()}>
+              <RotateCcw />
+              Tentar novamente
+            </Button>
+          </div>
         ) : shown.length === 0 ? (
           <div className="py-20 text-center">
             <Box className="mx-auto size-10 text-muted-foreground" />
@@ -192,10 +239,12 @@ export function ProjectsDashboard() {
                     </button>
                     <button
                       className="flex w-full items-center gap-2 rounded-sm px-3 py-2 text-sm hover:bg-accent"
-                      onClick={async () => {
-                        await duplicate({ data: { id: p.id } });
-                        await refresh();
-                      }}
+                      onClick={() =>
+                        runAction("Não foi possível duplicar o projeto.", async () => {
+                          await duplicate({ data: { id: p.id } });
+                          await refresh();
+                        })
+                      }
                     >
                       <Copy className="size-4" />
                       Duplicar

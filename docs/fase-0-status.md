@@ -41,13 +41,13 @@ Legenda: ✅ Feito · 🟡 Parcial · ❌ Faltando
 
 ✅ quase completo: abas, criar/renomear/duplicar/excluir com confirmação, cartão com nome/dono/data/papel, exclusão em cascata (Storage + linhas relacionadas via `ON DELETE CASCADE`), duplicação sem copiar membros/convites/links/travas.
 
-🟡 Falta estado de erro explícito em `ProjectsDashboard.tsx` — sem tratamento nem mensagem quando uma chamada ao servidor falha.
+✅ **(etapa 8)** `ProjectsDashboard.tsx` ganhou estado de erro de verdade: falha ao carregar a lista mostra um painel com "Tentar novamente" (em vez de ficar preso em "Carregando…" para sempre); falha em criar/renomear/duplicar/excluir mostra um banner dispensável acima da lista, em vez de falhar em silêncio.
 
 ## 5. Compartilhamento
 
 ✅ modal só para o dono, convite por e-mail com papel, alterar papel/remover membro, link com revogação, página pública de convite exigindo login, fallback de "e-mail não enviado" com link copiável (permitido pela própria spec).
 
-🟡 `ShareDialog` nunca deixa definir validade do link — `expiresAt` é sempre `null`, embora o backend (`createShareLink`) já aceite essa data.
+✅ **(etapa 8)** `ShareDialog` ganhou um campo "Expira em" (opcional) ao gerar o link, e os links ativos agora mostram a data de validade quando têm uma.
 
 ## 6. Documento e workspaces
 
@@ -85,7 +85,7 @@ Legenda: ✅ Feito · 🟡 Parcial · ❌ Faltando
 
 ✅ muito bem implementado: RPC atômica (`FOR UPDATE`), heartbeat 30s/expiração 90s, autosave 2s + Ctrl+S, conflito de versão otimista, aviso com baixar cópia/recarregar, `updated_at` só após gravação confirmada.
 
-❌ **Bug real**: a RPC `acquire_project_lock` retorna `holderName`, mas `EditorShell.tsx` descarta esse dado e sempre mostra "Em edição por outra pessoa", nunca o nome de fato.
+✅ **(etapa 8)** `EditorShell.tsx` agora mostra o `holderName` de verdade que a RPC já retornava. De quebra, achei e corrigi um segundo bug no mesmo trecho: a checagem usava `status.includes("same_user")`, mas a RPC nunca retorna essa string — o status real é `"own-other-session"`. Isso significava que abrir o mesmo projeto em duas abas da mesma conta caía silenciosamente no ramo "outra pessoa" em vez de oferecer "Assumir edição nesta aba" (o teste de aceite nº 12 do `fase-0.md`). A comparação agora usa o status tipado da própria função (`r.status`), sem `String(...).includes(...)`.
 
 ## 11. Testes
 
@@ -128,7 +128,7 @@ Legenda: ✅ Feito · 🟡 Parcial · ❌ Faltando
 5. ✅ **Árvore de áreas** — split/resize/join real, persistido em `document.workspaces`.
 6. ✅ **Transformação modal G/R/S + histórico navegável** — conversão graus/radianos extraída para `core/`, máquina de estado G/R/S, painel de histórico.
 7. ✅ **Viewport fiel ao Blender** — WebGPU real com fallback verdadeiro, botão do meio/Shift+meio, vistas numéricas + preferência de numpad. Peça pendente de teste visual — ver seção 8.
-8. **Correções de UX de trava e erro** — mostrar `holderName` real, desabilitar (não só no-op) controles em somente leitura, estado de erro no painel, campo de validade no link de compartilhamento.
+8. ✅ **Correções de UX de trava e erro** — `holderName` real (e um bug de detecção de "mesma conta, outra aba" corrigido de quebra), estado de erro no painel de projetos, campo de validade no link de compartilhamento.
 9. **Fechamento** — completar `docs/licenses.md`, rodar checklist de aceite completo (automatizado + os 15 passos manuais do `docs/fase-0.md`), atualizar este documento com o estado final.
 
 Cada etapa termina com `bun run test`, `bun run typecheck` (e lint quando aplicável) passando, e um commit em português.

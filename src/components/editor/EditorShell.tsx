@@ -75,6 +75,7 @@ export function EditorShell({ projectId }: { projectId: string }) {
     [loading, setLoading] = useState(true),
     [maximizedAreaId, setMaximizedAreaId] = useState<string | null>(null),
     [lock, setLock] = useState<"owned" | "other" | "self" | "readonly">("readonly"),
+    [lockHolderName, setLockHolderName] = useState<string | null>(null),
     [notice, setNotice] = useState(""),
     [palette, setPalette] = useState(false),
     [preferencesOpen, setPreferencesOpen] = useState(false),
@@ -93,15 +94,15 @@ export function EditorShell({ projectId }: { projectId: string }) {
         const r = await acquire({
           data: { projectId, sessionId: sessionId.current, takeover: false },
         });
-        const status = String((r as { status?: string }).status ?? r);
-        if (status.includes("acquired")) {
+        if (r.status === "acquired") {
           setLock("owned");
           store.setEditable(true);
-        } else if (status.includes("same_user")) {
+        } else if (r.status === "own-other-session") {
           setLock("self");
           store.setEditable(false);
         } else {
           setLock("other");
+          setLockHolderName(r.holderName ?? null);
           store.setEditable(false);
         }
       } else {
@@ -389,7 +390,7 @@ export function EditorShell({ projectId }: { projectId: string }) {
               const r = await acquire({
                 data: { projectId, sessionId: sessionId.current, takeover: true },
               });
-              if (String((r as { status?: string }).status ?? r).includes("acquired")) {
+              if (r.status === "acquired") {
                 setLock("owned");
                 store.setEditable(true);
               }
@@ -401,7 +402,7 @@ export function EditorShell({ projectId }: { projectId: string }) {
       )}
       {lock === "other" && (
         <div className="shrink-0 border-b bg-secondary px-4 py-2 text-center">
-          Em edição por outra pessoa · somente leitura
+          Em edição por {lockHolderName ?? "outra pessoa"} · somente leitura
         </div>
       )}
       <div className="min-h-0 flex-1">

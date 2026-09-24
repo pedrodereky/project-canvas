@@ -22,6 +22,7 @@ export function ShareDialog({ projectId }: { projectId: string }) {
   const [data, setData] = useState<Awaited<ReturnType<typeof getSharing>> | null>(null),
     [email, setEmail] = useState(""),
     [role, setRole] = useState<Role>("viewer"),
+    [expiresAt, setExpiresAt] = useState(""),
     [link, setLink] = useState(""),
     [message, setMessage] = useState("");
   async function refresh() {
@@ -42,10 +43,19 @@ export function ShareDialog({ projectId }: { projectId: string }) {
   }
   async function generate() {
     const r = await createLink({
-      data: { projectId, role, expiresAt: null, origin: location.origin },
+      data: {
+        projectId,
+        role,
+        expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null,
+        origin: location.origin,
+      },
     });
     setLink(r.link);
-    setMessage("Link criado. Qualquer pessoa autenticada com o link receberá o papel escolhido.");
+    setMessage(
+      expiresAt
+        ? `Link criado, válido até ${new Date(expiresAt).toLocaleDateString("pt-BR")}.`
+        : "Link criado. Qualquer pessoa autenticada com o link receberá o papel escolhido.",
+    );
     await refresh();
   }
   return (
@@ -101,8 +111,18 @@ export function ShareDialog({ projectId }: { projectId: string }) {
           </div>
           <div className="border-t pt-5">
             <h3 className="mb-3 text-sm font-semibold">Link de acesso</h3>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <RoleSelect value={role} onChange={setRole} />
+              <label className="flex h-9 items-center gap-1.5 rounded-md border bg-background px-2 text-xs text-muted-foreground">
+                Expira em
+                <input
+                  type="date"
+                  min={new Date().toISOString().slice(0, 10)}
+                  value={expiresAt}
+                  onChange={(e) => setExpiresAt(e.target.value)}
+                  className="bg-transparent text-foreground outline-none"
+                />
+              </label>
               <Button variant="outline" onClick={generate}>
                 <Link2 />
                 Gerar link
@@ -187,7 +207,11 @@ export function ShareDialog({ projectId }: { projectId: string }) {
                       className="flex items-center gap-3 rounded-md border border-dashed p-3"
                     >
                       <Link2 />
-                      <span className="flex-1">Link · {roleLabels[l.role]}</span>
+                      <span className="flex-1">
+                        Link · {roleLabels[l.role]}
+                        {l.expires_at &&
+                          ` · expira em ${new Date(l.expires_at).toLocaleDateString("pt-BR")}`}
+                      </span>
                       <Button
                         size="sm"
                         variant="ghost"

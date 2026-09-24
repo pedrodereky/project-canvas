@@ -1,19 +1,19 @@
-# Status da Fase 0 — auditoria
+# Status da Fase 0
 
-Auditoria do código herdado do Lovable contra `docs/fase-0.md` e as regras do `CLAUDE.md`. Feita antes de qualquer alteração funcional; serve de base para o plano de etapas no fim deste documento.
+Auditoria do código herdado do Lovable contra `docs/fase-0.md` e as regras do `CLAUDE.md`, feita antes de qualquer alteração funcional, e o registro de como cada uma das 9 etapas do plano resultante mudou esse estado. As 9 etapas estão concluídas — ver "Estado final da Fase 0" ao fim deste documento.
 
 Legenda: ✅ Feito · 🟡 Parcial · ❌ Faltando
 
 ## 1. Base técnica e visual
 
-| Item                                                      | Estado | Onde / observação                                                                                                    |
-| --------------------------------------------------------- | ------ | -------------------------------------------------------------------------------------------------------------------- |
-| TanStack Start + React + TS strict + Tailwind + shadcn    | ✅     | `package.json`, `tsconfig.json`, `components.json`                                                                   |
-| Zustand + Immer, three + R3F, Vitest                      | ✅     | `src/components/editor/store.ts`, `src/core/history.ts`                                                              |
-| `core/units`, `can(user, feature)`                        | ✅     | `src/core/units.ts`, `src/core/permissions.ts`                                                                       |
-| Pastas reservadas `engine/`, `workers/`, `addons/`        | ❌     | não existem no repositório                                                                                           |
-| `docs/licenses.md` com a licença de cada pacote           | 🟡     | lista só 6 pacotes; faltam `@supabase/supabase-js`, `@tanstack/*`, `@radix-ui/*`, `zod`, `react`, `tailwindcss` etc. |
-| Backend Supabase configurado só por variáveis de ambiente | 🟡     | hoje aponta para o Supabase gerenciado pelo Lovable Cloud (ver seção "Resíduos")                                     |
+| Item                                                      | Estado | Onde / observação                                                                                                                                                               |
+| --------------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| TanStack Start + React + TS strict + Tailwind + shadcn    | ✅     | `package.json`, `tsconfig.json`, `components.json`                                                                                                                              |
+| Zustand + Immer, three + R3F, Vitest                      | ✅     | `src/components/editor/store.ts`, `src/core/history.ts`                                                                                                                         |
+| `core/units`, `can(user, feature)`                        | ✅     | `src/core/units.ts`, `src/core/permissions.ts`                                                                                                                                  |
+| Pastas reservadas `engine/`, `workers/`, `addons/`        | ✅     | **(etapa 9)** criadas em `src/`, com um `README.md` cada explicando a que fase pertencem                                                                                        |
+| `docs/licenses.md` com a licença de cada pacote           | ✅     | **(etapa 9)** todas as 77 dependências diretas (produção + desenvolvimento), conferidas em `node_modules/*/package.json`; nenhuma GPL/LGPL/AGPL                                 |
+| Backend Supabase configurado só por variáveis de ambiente | 🟡     | continua apontando para o Supabase gerenciado pelo Lovable Cloud — só muda quando você criar o projeto novo e preencher o `.env` local (ver seção 3 da minha resposta original) |
 
 ## 2. Contas e perfis
 
@@ -97,6 +97,28 @@ Legenda: ✅ Feito · 🟡 Parcial · ❌ Faltando
 
 ✅ `bun run lint` estava com 484 erros (quase todos formatação Prettier, herdados do estilo denso gerado pelo Lovable) — corrigido nesta etapa com `prettier --write` + `eslint --fix`, mais 2 ajustes manuais mínimos (ternário usado como statement em `EditorShell.tsx`, `let`→`const` em `previewAuthStorage.ts`). Restam só 15 avisos pré-existentes de `react-hooks/exhaustive-deps` e `react-refresh` (padrão em projetos shadcn), sem erros.
 
+## 12. Checklist manual de aceite (`docs/fase-0.md`)
+
+Avaliação por leitura de código — **não é a mesma coisa que ter rodado no navegador**. Cada linha diz o que sustenta a expectativa e, quando existe, o risco de não ter sido visto com os próprios olhos. Confirmação final é sua, como o `CLAUDE.md` já estabelece.
+
+| #   | Teste                                                                           | Avaliação                                                                                                                                                                                                               |
+| --- | ------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Criar conta, projeto e layout; recarregar e confirmar persistência              | Sustentado por `createProject`/`loadProject`/`saveProject` e pelo documento persistido no Storage. Alta confiança.                                                                                                      |
+| 2   | Dividir em 3 áreas, trocar uma para Outliner, recarregar                        | Sustentado pela árvore de áreas real (etapa 5) + autosave. Alta confiança na lógica; não vi renderizado.                                                                                                                |
+| 3   | `G → X → 2 → Enter`, depois `Ctrl+Z`                                            | O cálculo exato (`+2` em X) tem teste unitário direto (`transformModal.test.ts`). A integração mouse/teclado no `Viewport` não foi vista rodando.                                                                       |
+| 4   | `R` → `Esc`: nada muda                                                          | Cancelar nunca chama `setVector`; o documento não é tocado. Alta confiança na lógica, não visto rodando.                                                                                                                |
+| 5   | Criar esfera por F3                                                             | `add-sphere` está registrado no `CommandRegistry` e aparece na busca. Alta confiança.                                                                                                                                   |
+| 6   | Leitor não altera nada, nem por atalhos                                         | `store.add/rename/toggleVisible/setVector/undo/redo/jumpTo` checam `editable`; G/R/S no `Viewport` também. Alta confiança.                                                                                              |
+| 7   | Duas contas diferentes: a segunda abre em somente leitura                       | RPC `acquire_project_lock` retorna `locked`/`holderName` para um usuário diferente; `EditorShell` trata esse ramo desde sempre (não foi afetado pelo bug da etapa 8, que era só sobre a _mesma_ conta). Alta confiança. |
+| 8   | Revogar link, bloqueio imediato                                                 | `revokeShareLink` grava `revoked_at`; `consumeInvite` checa `!link.revoked_at`. Alta confiança.                                                                                                                         |
+| 9   | Barra de status mostra o modo gráfico real                                      | Depende da detecção real de WebGPU da etapa 7 — não vi rodando.                                                                                                                                                         |
+| 10  | Todo menu/controle executa uma ação ou aparece desabilitado                     | Percorri manualmente cada menu/botão do `EditorShell`/`Viewport`/`ProjectsDashboard`/`ShareDialog` no código; não sobrou nenhum com `onClick` vazio ou `alert()`. Alta confiança.                                       |
+| 11  | "Emular numpad" não é herdado entre contas                                      | `user_preferences` é uma tabela por `user_id`, isolada por RLS; cada login busca a própria linha. Alta confiança.                                                                                                       |
+| 12  | Mesma conta, duas abas: 2ª mostra "Assumir edição"; 1ª vira leitura em ~30s     | O bug que quebrava exatamente isso foi corrigido na etapa 8 (`own-other-session` em vez de `same_user`). Alta confiança na correção; não vi rodando com duas abas de verdade.                                           |
+| 13  | Depois de assumir na aba 2, salvar na aba 1 mostra aviso + permite baixar cópia | `saveProject` rejeita por lock/versão; `EditorShell` mostra o aviso com "Baixar cópia" e "Recarregar". Não tocado nas etapas 1–8, presente desde o início. Alta confiança.                                              |
+| 14  | Leitor divide uma área e recarrega: layout volta ao salvo                       | Ações de layout não são bloqueadas por `editable`, mas `persist()` só grava com `lock === "owned"` — um leitor nunca tem essa trava. Alta confiança na lógica, não vi rodando.                                          |
+| 15  | Excluir projeto com link/convite ativos: tudo para de funcionar e a pasta some  | `deleteProject` remove o arquivo do Storage; `ON DELETE CASCADE` cuida de `project_members`/`project_invites`/`share_links`/`project_locks`. Não tocado nas etapas 1–8. Alta confiança.                                 |
+
 ## Resíduos do Lovable
 
 **Ainda acopla ao Lovable Cloud (pendente — depende do projeto Supabase novo):**
@@ -129,6 +151,14 @@ Legenda: ✅ Feito · 🟡 Parcial · ❌ Faltando
 6. ✅ **Transformação modal G/R/S + histórico navegável** — conversão graus/radianos extraída para `core/`, máquina de estado G/R/S, painel de histórico.
 7. ✅ **Viewport fiel ao Blender** — WebGPU real com fallback verdadeiro, botão do meio/Shift+meio, vistas numéricas + preferência de numpad. Peça pendente de teste visual — ver seção 8.
 8. ✅ **Correções de UX de trava e erro** — `holderName` real (e um bug de detecção de "mesma conta, outra aba" corrigido de quebra), estado de erro no painel de projetos, campo de validade no link de compartilhamento.
-9. **Fechamento** — completar `docs/licenses.md`, rodar checklist de aceite completo (automatizado + os 15 passos manuais do `docs/fase-0.md`), atualizar este documento com o estado final.
+9. ✅ **Fechamento** — `docs/licenses.md` completo, pastas `engine/`/`workers/`/`addons/` criadas, checklist de aceite avaliado por leitura de código (seção 12), este documento atualizado com o estado final.
 
 Cada etapa termina com `bun run test`, `bun run typecheck` (e lint quando aplicável) passando, e um commit em português.
+
+## Estado final da Fase 0
+
+As 9 etapas do plano estão concluídas. O que resta, e não depende de mim escrever mais código:
+
+- **Trocar o backend**: o `.env` ainda aponta para o Supabase do Lovable Cloud. Falta você criar o projeto Supabase próprio, aplicar `supabase/migrations/` e preencher o `.env` local — os passos exatos estão na minha resposta original (seção 3), antes da etapa 1.
+- **Testar no navegador**: o `CLAUDE.md` deste projeto define que testes no navegador são seus. A seção 12 lista os 15 passos do `docs/fase-0.md` com minha avaliação por leitura de código, mas nenhum foi confirmado com os próprios olhos rodando. As peças de maior risco, por dependerem de renderização 3D real e de uma sessão autenticada que não tenho, são: o contorno de seleção sob WebGPU real (item 72), as vistas numéricas/câmera (item 74) e o modo gráfico na barra de status (item 9 da seção 12).
+- **Dívida conhecida, fora do escopo de qualquer etapa**: edição de campos por arraste (scrub) nas Propriedades continua ausente (seção 8); é uma peça pequena e isolada, mas não estava em nenhuma etapa deste plano.

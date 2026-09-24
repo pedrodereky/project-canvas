@@ -114,7 +114,7 @@ export function AuthScreen() {
       <header className="relative z-10 flex items-center justify-between px-6 py-6 sm:px-12">
         <span className="font-brand text-3xl tracking-wide">WASABII</span>
         <Button
-          className="rounded-full bg-white px-7 font-sans text-sm font-medium uppercase tracking-wide text-black hover:bg-white/90"
+          className="rounded-full border border-white/30 bg-white/15 px-7 font-sans text-sm font-medium uppercase tracking-wide text-white backdrop-blur-md hover:bg-white/25"
           onClick={() => openForm("login")}
         >
           Entrar

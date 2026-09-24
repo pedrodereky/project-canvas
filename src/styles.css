@@ -113,3 +113,16 @@
     letter-spacing: 0;
   }
 }
+
+/*
+ * Subtle film-grain overlay for dark, cinematic sections (see CLAUDE.md
+ * "Identidade visual"). Pure CSS/SVG noise, no image asset: a feTurbulence
+ * filter rendered as a tiled background, blended softly over whatever sits
+ * beneath it. Apply on an absolutely-positioned, pointer-events-none layer.
+ */
+.bg-grain {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  mix-blend-mode: overlay;
+  opacity: 0.2;
+}

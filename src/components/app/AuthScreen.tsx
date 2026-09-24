@@ -155,19 +155,21 @@ export function AuthScreen() {
 
       <div className="relative z-10 flex flex-col items-center px-6 pb-10 sm:absolute sm:bottom-10 sm:left-12 sm:px-0">
         <ArcLabel text="Em desenvolvimento" />
-        <div className="-mt-1 w-60 rounded-2xl border border-border bg-card/80 p-5 text-center backdrop-blur">
-          <p className="text-lg font-semibold">Fase 0</p>
-          <p className="text-sm text-muted-foreground">Fundação do produto</p>
+        <div className="relative -mt-1 w-60 overflow-hidden border border-border bg-card/80 p-5 text-center backdrop-blur">
+          <div className="bg-grain pointer-events-none absolute inset-0 opacity-40" />
+          <p className="relative text-lg font-semibold">Fase 0</p>
+          <p className="relative text-sm text-muted-foreground">Fundação do produto</p>
         </div>
       </div>
       <div className="relative z-10 flex flex-col items-center px-6 pb-10 sm:absolute sm:bottom-10 sm:right-12 sm:px-0">
         <ArcLabel text="Comece agora" />
-        <div className="-mt-1 w-60 rounded-2xl border border-border bg-card/80 p-5 text-center backdrop-blur">
-          <p className="text-lg font-semibold">Criar conta</p>
-          <p className="text-sm text-muted-foreground">Grátis, sem cartão</p>
+        <div className="relative -mt-1 w-60 overflow-hidden border border-border bg-card/80 p-5 text-center backdrop-blur">
+          <div className="bg-grain pointer-events-none absolute inset-0 opacity-40" />
+          <p className="relative text-lg font-semibold">Criar conta</p>
+          <p className="relative text-sm text-muted-foreground">Grátis, sem cartão</p>
           <Button
             variant="outline"
-            className="mt-4 w-full rounded-full uppercase tracking-wide"
+            className="relative mt-4 w-full rounded-none uppercase tracking-wide"
             onClick={() => openForm("signup")}
           >
             Começar

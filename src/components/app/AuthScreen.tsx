@@ -138,7 +138,7 @@ export function AuthScreen() {
         </Button>
       </header>
 
-      <div className="relative z-10 flex min-h-[70vh] flex-col items-center justify-center px-6 text-center">
+      <div className="relative z-10 flex min-h-[85vh] flex-col items-center justify-end px-6 pb-16 text-center">
         <p className="mb-4 text-xs uppercase tracking-[0.4em] text-primary">
           Modelagem 3D para moda
         </p>

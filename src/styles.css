@@ -62,6 +62,7 @@
   --color-sidebar-ring: var(--sidebar-ring);
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Anton", "Inter", ui-sans-serif, sans-serif;
+  --font-brand: "Iceberg", "Anton", "Inter", ui-sans-serif, sans-serif;
 }
 
 :root {

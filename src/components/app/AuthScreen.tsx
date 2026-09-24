@@ -1,8 +1,24 @@
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { Eye, EyeOff, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+
+// A label that curves gently along an arc, like a stamped badge — the
+// "‹ Latest Release ›" style eyebrow above the floating cards.
+function ArcLabel({ text }: { text: string }) {
+  const pathId = useId();
+  return (
+    <svg viewBox="0 0 220 56" className="h-9 w-56 overflow-visible">
+      <path id={pathId} d="M 10 46 A 400 400 0 0 1 210 46" fill="none" />
+      <text className="fill-muted-foreground text-[11px] uppercase tracking-[0.3em]">
+        <textPath href={`#${pathId}`} startOffset="50%" textAnchor="middle">
+          ‹ {text} ›
+        </textPath>
+      </text>
+    </svg>
+  );
+}
 
 export function AuthScreen() {
   const navigate = useNavigate();
@@ -104,6 +120,7 @@ export function AuthScreen() {
       />
       <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-background/20" />
       <div className="absolute inset-0 bg-gradient-to-r from-background/80 via-transparent to-background/40" />
+      <div className="bg-grain pointer-events-none absolute inset-0" />
       <span
         aria-hidden
         className="pointer-events-none absolute inset-x-0 top-[16%] select-none whitespace-nowrap text-center font-display text-[15vw] uppercase leading-none text-foreground/[0.09]"
@@ -136,25 +153,23 @@ export function AuthScreen() {
         </Button>
       </div>
 
-      <div className="relative z-10 flex flex-col items-start gap-2 px-6 pb-10 sm:absolute sm:bottom-10 sm:left-12 sm:px-0">
-        <span className="text-[10px] uppercase tracking-[0.35em] text-muted-foreground">
-          ‹ Em desenvolvimento ›
-        </span>
-        <div className="rounded-xl border border-border bg-card/80 px-5 py-3 backdrop-blur">
-          <p className="text-sm font-semibold">Fase 0</p>
-          <p className="text-xs text-muted-foreground">Fundação do produto</p>
+      <div className="relative z-10 flex flex-col items-center px-6 pb-10 sm:absolute sm:bottom-10 sm:left-12 sm:px-0">
+        <ArcLabel text="Em desenvolvimento" />
+        <div className="-mt-1 w-60 rounded-2xl border border-border bg-card/80 p-5 text-center backdrop-blur">
+          <p className="text-lg font-semibold">Fase 0</p>
+          <p className="text-sm text-muted-foreground">Fundação do produto</p>
         </div>
       </div>
-      <div className="relative z-10 flex flex-col items-start gap-2 px-6 pb-10 sm:absolute sm:bottom-10 sm:right-12 sm:items-end sm:px-0">
-        <span className="text-[10px] uppercase tracking-[0.35em] text-muted-foreground">
-          ‹ Comece agora ›
-        </span>
-        <div className="flex items-center gap-3 rounded-xl border border-border bg-card/80 px-5 py-3 backdrop-blur">
-          <div>
-            <p className="text-sm font-semibold">Criar conta</p>
-            <p className="text-xs text-muted-foreground">Grátis, sem cartão</p>
-          </div>
-          <Button size="sm" onClick={() => openForm("signup")}>
+      <div className="relative z-10 flex flex-col items-center px-6 pb-10 sm:absolute sm:bottom-10 sm:right-12 sm:px-0">
+        <ArcLabel text="Comece agora" />
+        <div className="-mt-1 w-60 rounded-2xl border border-border bg-card/80 p-5 text-center backdrop-blur">
+          <p className="text-lg font-semibold">Criar conta</p>
+          <p className="text-sm text-muted-foreground">Grátis, sem cartão</p>
+          <Button
+            variant="outline"
+            className="mt-4 w-full rounded-full uppercase tracking-wide"
+            onClick={() => openForm("signup")}
+          >
             Começar
           </Button>
         </div>

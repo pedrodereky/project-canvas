@@ -154,14 +154,14 @@ export function AuthScreen() {
 
       <div className="relative z-10 flex flex-col items-center px-6 pb-10 sm:absolute sm:bottom-10 sm:left-12 sm:px-0">
         <ArcLabel text="Em desenvolvimento" />
-        <div className="-mt-1 flex h-44 w-60 flex-col justify-center rounded-2xl border border-border bg-card/80 p-5 text-center backdrop-blur">
+        <div className="-mt-1 flex h-36 w-72 flex-col justify-center rounded-2xl border border-border bg-card/80 p-5 text-center backdrop-blur">
           <p className="text-lg font-semibold">Fase 0</p>
           <p className="text-sm text-muted-foreground">Fundação do produto</p>
         </div>
       </div>
       <div className="relative z-10 flex flex-col items-center px-6 pb-10 sm:absolute sm:bottom-10 sm:right-12 sm:px-0">
         <ArcLabel text="Comece agora" />
-        <div className="-mt-1 flex h-44 w-60 flex-col justify-center rounded-2xl border border-border bg-card/80 p-5 text-center backdrop-blur">
+        <div className="-mt-1 flex h-36 w-72 flex-col justify-center rounded-2xl border border-border bg-card/80 p-5 text-center backdrop-blur">
           <p className="text-lg font-semibold">Criar conta</p>
           <p className="text-sm text-muted-foreground">Grátis, sem cartão</p>
           <Button

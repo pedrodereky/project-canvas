@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearch } from "@tanstack/react-router";
-import { Box, Eye, EyeOff, Loader2, X } from "lucide-react";
+import { Eye, EyeOff, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -112,13 +112,11 @@ export function AuthScreen() {
       </span>
 
       <header className="relative z-10 flex items-center justify-between px-6 py-6 sm:px-12">
-        <span className="flex items-center gap-3 text-sm font-semibold">
-          <span className="grid size-8 place-items-center rounded-md bg-primary text-primary-foreground">
-            <Box className="size-4" />
-          </span>
-          <span className="tracking-[0.2em]">WASABII ART</span>
-        </span>
-        <Button className="rounded-full px-6" onClick={() => openForm("login")}>
+        <span className="font-brand text-3xl tracking-wide">WASABII</span>
+        <Button
+          className="rounded-full bg-white px-7 font-sans text-sm font-medium uppercase tracking-wide text-black hover:bg-white/90"
+          onClick={() => openForm("login")}
+        >
           Entrar
         </Button>
       </header>

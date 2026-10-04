@@ -73,6 +73,50 @@ export type Database = {
           },
         ];
       };
+      project_snapshots: {
+        Row: {
+          created_at: string;
+          created_by: string;
+          document_version: number;
+          id: string;
+          kind: string;
+          label: string | null;
+          project_id: string;
+          size_bytes: number | null;
+          storage_path: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by: string;
+          document_version: number;
+          id?: string;
+          kind: string;
+          label?: string | null;
+          project_id: string;
+          size_bytes?: number | null;
+          storage_path: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string;
+          document_version?: number;
+          id?: string;
+          kind?: string;
+          label?: string | null;
+          project_id?: string;
+          size_bytes?: number | null;
+          storage_path?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "project_snapshots_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       project_locks: {
         Row: {
           heartbeat_at: string;

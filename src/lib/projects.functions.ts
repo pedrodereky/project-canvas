@@ -1,7 +1,83 @@
 import { createServerFn } from "@tanstack/react-start";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { Database } from "@/integrations/supabase/types";
 import { createDocument, migrateDocument, type ProjectDocument } from "@/core/document";
+import {
+  isSnapshotDue,
+  snapshotStoragePath,
+  snapshotsToPrune,
+  type SnapshotKind,
+} from "@/core/snapshots";
+
+type SupabaseAuthedClient = SupabaseClient<Database>;
+
+// Writes a JSON copy of `doc` to Storage and records it as a recovery point.
+// For autosave snapshots it then prunes older ones past the retention window.
+async function archiveSnapshot(
+  supabase: SupabaseAuthedClient,
+  projectId: string,
+  userId: string,
+  doc: ProjectDocument,
+  version: number,
+  kind: SnapshotKind,
+  label: string | null,
+) {
+  const snapshotId = crypto.randomUUID();
+  const path = snapshotStoragePath(projectId, snapshotId);
+  const body = JSON.stringify(doc);
+  const { error: up } = await supabase.storage
+    .from("projects")
+    .upload(path, new Blob([body], { type: "application/json" }), { upsert: false });
+  if (up) throw new Error(up.message);
+  const { error: ins } = await supabase.from("project_snapshots").insert({
+    id: snapshotId,
+    project_id: projectId,
+    document_version: version,
+    storage_path: path,
+    kind,
+    label,
+    size_bytes: body.length,
+    created_by: userId,
+  });
+  if (ins) {
+    await supabase.storage.from("projects").remove([path]);
+    throw new Error(ins.message);
+  }
+  if (kind === "autosave") await pruneSnapshots(supabase, projectId);
+  return { id: snapshotId };
+}
+
+async function pruneSnapshots(supabase: SupabaseAuthedClient, projectId: string) {
+  const { data } = await supabase
+    .from("project_snapshots")
+    .select("id,kind,created_at,storage_path")
+    .eq("project_id", projectId);
+  const rows = data ?? [];
+  const pruneIds = snapshotsToPrune(
+    rows.map((r) => ({ id: r.id, kind: r.kind as SnapshotKind, createdAt: r.created_at })),
+  );
+  if (!pruneIds.length) return;
+  const idSet = new Set(pruneIds);
+  const paths = rows.filter((r) => idSet.has(r.id)).map((r) => r.storage_path);
+  if (paths.length) await supabase.storage.from("projects").remove(paths);
+  await supabase.from("project_snapshots").delete().in("id", pruneIds);
+}
+
+// Latest autosave timestamp for a project (null if none), used to throttle
+// autosave snapshots to the configured cadence.
+async function latestAutosaveAt(supabase: SupabaseAuthedClient, projectId: string) {
+  const { data } = await supabase
+    .from("project_snapshots")
+    .select("created_at")
+    .eq("project_id", projectId)
+    .eq("kind", "autosave")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return data?.created_at ? new Date(data.created_at) : null;
+}
 
 const roleSchema = z.enum(["editor", "commenter", "viewer"]);
 const encoder = new TextEncoder();
@@ -121,9 +197,14 @@ export const deleteProject = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((v) => z.object({ id: z.string().uuid() }).parse(v))
   .handler(async ({ data, context }) => {
-    const { error: s } = await context.supabase.storage
+    const { data: snaps } = await context.supabase.storage
       .from("projects")
-      .remove([`${data.id}/document.json`]);
+      .list(`${data.id}/snapshots`);
+    const paths = [
+      `${data.id}/document.json`,
+      ...(snaps ?? []).map((f) => `${data.id}/snapshots/${f.name}`),
+    ];
+    const { error: s } = await context.supabase.storage.from("projects").remove(paths);
     if (s) throw new Error(s.message);
     const { error } = await context.supabase.from("projects").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
@@ -220,9 +301,164 @@ export const saveProject = createServerFn({ method: "POST" })
       .select("document_version")
       .maybeSingle();
     if (error) throw new Error(error.message);
-    return updated
-      ? { ok: true as const, version: updated.document_version }
-      : { ok: false as const, reason: "conflict" as const };
+    if (!updated) return { ok: false as const, reason: "conflict" as const };
+    // Best-effort time-based recovery point: a snapshot hiccup must never block
+    // the user's save, so failures here are swallowed.
+    try {
+      if (isSnapshotDue(await latestAutosaveAt(context.supabase, data.id), new Date())) {
+        await archiveSnapshot(
+          context.supabase,
+          data.id,
+          context.userId,
+          doc,
+          data.version + 1,
+          "autosave",
+          null,
+        );
+      }
+    } catch {
+      // ignore: the document itself is already safely saved
+    }
+    return { ok: true as const, version: updated.document_version };
+  });
+export const listSnapshots = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((v) => z.object({ projectId: z.string().uuid() }).parse(v))
+  .handler(async ({ data, context }) => {
+    const { data: rows, error } = await context.supabase
+      .from("project_snapshots")
+      .select("id,document_version,kind,label,size_bytes,created_at,created_by")
+      .eq("project_id", data.projectId)
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    const list = rows ?? [];
+    const ids = [...new Set(list.map((r) => r.created_by))];
+    const { data: profiles } = ids.length
+      ? await context.supabase.from("profiles").select("id,nome").in("id", ids)
+      : { data: [] };
+    const names = new Map((profiles ?? []).map((p) => [p.id, p.nome]));
+    return list.map((r) => ({
+      id: r.id,
+      version: r.document_version,
+      kind: r.kind as SnapshotKind,
+      label: r.label,
+      sizeBytes: r.size_bytes,
+      createdAt: r.created_at,
+      authorName: names.get(r.created_by) ?? (r.created_by === context.userId ? "Você" : "Membro"),
+    }));
+  });
+export const createManualSnapshot = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((v) =>
+    z
+      .object({
+        projectId: z.string().uuid(),
+        sessionId: z.string().uuid(),
+        label: z.string().trim().max(120).optional(),
+      })
+      .parse(v),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: locked } = await context.supabase.rpc("heartbeat_project_lock", {
+      _project_id: data.projectId,
+      _session_id: data.sessionId,
+    });
+    if (!locked) return { ok: false as const, reason: "lock" as const };
+    const { data: p, error: pe } = await context.supabase
+      .from("projects")
+      .select("document_version")
+      .eq("id", data.projectId)
+      .single();
+    if (pe) throw new Error(pe.message);
+    const { data: file, error: f } = await context.supabase.storage
+      .from("projects")
+      .download(`${data.projectId}/document.json`);
+    if (f) throw new Error(f.message);
+    const doc = migrateDocument(JSON.parse(await file.text()));
+    const { id } = await archiveSnapshot(
+      context.supabase,
+      data.projectId,
+      context.userId,
+      doc,
+      p.document_version,
+      "manual",
+      data.label?.length ? data.label : null,
+    );
+    return { ok: true as const, id };
+  });
+export const restoreSnapshot = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((v) =>
+    z
+      .object({
+        projectId: z.string().uuid(),
+        sessionId: z.string().uuid(),
+        snapshotId: z.string().uuid(),
+      })
+      .parse(v),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: locked } = await context.supabase.rpc("heartbeat_project_lock", {
+      _project_id: data.projectId,
+      _session_id: data.sessionId,
+    });
+    if (!locked) return { ok: false as const, reason: "lock" as const };
+    const { data: snap, error: se } = await context.supabase
+      .from("project_snapshots")
+      .select("storage_path")
+      .eq("id", data.snapshotId)
+      .eq("project_id", data.projectId)
+      .single();
+    if (se) throw new Error(se.message);
+    const { data: snapFile, error: sf } = await context.supabase.storage
+      .from("projects")
+      .download(snap.storage_path);
+    if (sf) throw new Error(sf.message);
+    const restored = migrateDocument(JSON.parse(await snapFile.text()));
+    const { data: p, error: pe } = await context.supabase
+      .from("projects")
+      .select("document_version")
+      .eq("id", data.projectId)
+      .single();
+    if (pe) throw new Error(pe.message);
+    const version = p.document_version;
+    // Snapshot the current state first, so restoring is itself reversible.
+    const { data: current } = await context.supabase.storage
+      .from("projects")
+      .download(`${data.projectId}/document.json`);
+    if (current) {
+      try {
+        await archiveSnapshot(
+          context.supabase,
+          data.projectId,
+          context.userId,
+          migrateDocument(JSON.parse(await current.text())),
+          version,
+          "autosave",
+          null,
+        );
+      } catch {
+        // best-effort: proceed with the restore even if the backup snapshot fails
+      }
+    }
+    const { error: up } = await context.supabase.storage
+      .from("projects")
+      .upload(
+        `${data.projectId}/document.json`,
+        new Blob([JSON.stringify(restored)], { type: "application/json" }),
+        { upsert: true },
+      );
+    if (up) throw new Error(up.message);
+    const { data: updated, error } = await context.supabase
+      .from("projects")
+      .update({ document_version: version + 1, updated_at: new Date().toISOString() })
+      .eq("id", data.projectId)
+      .eq("document_version", version)
+      .select("document_version")
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!updated) return { ok: false as const, reason: "conflict" as const };
+    return { ok: true as const, version: updated.document_version, document: restored };
   });
 export const acquireLock = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

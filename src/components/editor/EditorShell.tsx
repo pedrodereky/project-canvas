@@ -4,6 +4,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import {
   Box,
   ChevronDown,
+  Clock,
   Download,
   Eye,
   EyeOff,
@@ -30,10 +31,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   acquireLock,
+  createManualSnapshot,
   getPreferences,
   heartbeatLock,
+  listSnapshots,
   loadProject,
   releaseLock,
+  restoreSnapshot,
   saveProject,
   savePreferences,
 } from "@/lib/projects.functions";
@@ -67,7 +71,9 @@ export function EditorShell({ projectId }: { projectId: string }) {
     acquire = useServerFn(acquireLock),
     heartbeat = useServerFn(heartbeatLock),
     release = useServerFn(releaseLock),
-    save = useServerFn(saveProject);
+    save = useServerFn(saveProject),
+    createManual = useServerFn(createManualSnapshot),
+    restore = useServerFn(restoreSnapshot);
   const store = useEditorStore();
   const [project, setProject] = useState<{ name: string; role: string; version: number } | null>(
       null,
@@ -80,6 +86,7 @@ export function EditorShell({ projectId }: { projectId: string }) {
     [palette, setPalette] = useState(false),
     [preferencesOpen, setPreferencesOpen] = useState(false),
     [historyOpen, setHistoryOpen] = useState(false),
+    [snapshotsOpen, setSnapshotsOpen] = useState(false),
     [search, setSearch] = useState("");
   const sessionId = useRef(crypto.randomUUID());
   const document = store.history.present;
@@ -146,13 +153,47 @@ export function EditorShell({ projectId }: { projectId: string }) {
       setNotice("Suas últimas alterações não foram salvas porque outra sessão assumiu a edição");
     }
   }
+  async function createRecoveryPoint(label?: string) {
+    if (!project || lock !== "owned") return;
+    await persist(); // capture the latest edits, not just the last saved state
+    const r = await createManual({
+      data: { projectId, sessionId: sessionId.current, ...(label ? { label } : {}) },
+    });
+    setNotice(
+      r.ok ? "Ponto de recuperação criado." : "Não foi possível criar o ponto de recuperação.",
+    );
+  }
+  async function restoreRecoveryPoint(snapshotId: string) {
+    if (!project || lock !== "owned") return false;
+    const r = await restore({ data: { projectId, sessionId: sessionId.current, snapshotId } });
+    if (r.ok) {
+      store.setDocument(r.document, store.history.limit);
+      setProject({ ...project, version: r.version });
+      setNotice("Projeto restaurado para o ponto selecionado.");
+      return true;
+    }
+    setNotice("Não foi possível restaurar: outra sessão assumiu a edição.");
+    return false;
+  }
   const registryRef = useRef<CommandRegistry | undefined>(undefined);
   if (!registryRef.current) registryRef.current = new CommandRegistry();
   const registry = registryRef.current;
   // Commands close over `latest` (via a ref) instead of `project`/`document`/`persist`
   // directly, so registration can happen once without the closures going stale.
-  const latestRef = useRef({ project, document, persist, editable: store.editable });
-  latestRef.current = { project, document, persist, editable: store.editable };
+  const latestRef = useRef({
+    project,
+    document,
+    persist,
+    createRecoveryPoint,
+    editable: store.editable,
+  });
+  latestRef.current = {
+    project,
+    document,
+    persist,
+    createRecoveryPoint,
+    editable: store.editable,
+  };
   useEffect(() => {
     const unregister = [
       registry.register({
@@ -212,6 +253,17 @@ export function EditorShell({ projectId }: { projectId: string }) {
         id: "history",
         name: "Histórico",
         run: () => setHistoryOpen(true),
+      }),
+      registry.register({
+        id: "recovery-points",
+        name: "Pontos de recuperação",
+        run: () => setSnapshotsOpen(true),
+      }),
+      registry.register({
+        id: "create-recovery-point",
+        name: "Criar ponto de recuperação",
+        needsEdit: true,
+        run: () => void latestRef.current.createRecoveryPoint(),
       }),
       registry.register({
         id: "preferences",
@@ -296,7 +348,14 @@ export function EditorShell({ projectId }: { projectId: string }) {
           />
           <EditorMenu
             label="Editar"
-            ids={["undo", "redo", "history", "preferences"]}
+            ids={[
+              "undo",
+              "redo",
+              "history",
+              "recovery-points",
+              "create-recovery-point",
+              "preferences",
+            ]}
             registry={registry}
             context={commandContext}
           />
@@ -528,7 +587,161 @@ export function EditorShell({ projectId }: { projectId: string }) {
         </div>
       )}
       {preferencesOpen && <PreferencesDialog onClose={() => setPreferencesOpen(false)} />}
+      {snapshotsOpen && (
+        <SnapshotsDialog
+          projectId={projectId}
+          editable={lock === "owned"}
+          onClose={() => setSnapshotsOpen(false)}
+          onCreateManual={createRecoveryPoint}
+          onRestore={restoreRecoveryPoint}
+        />
+      )}
     </main>
+  );
+}
+function SnapshotsDialog({
+  projectId,
+  editable,
+  onClose,
+  onCreateManual,
+  onRestore,
+}: {
+  projectId: string;
+  editable: boolean;
+  onClose: () => void;
+  onCreateManual: (label?: string) => Promise<void>;
+  onRestore: (snapshotId: string) => Promise<boolean>;
+}) {
+  const list = useServerFn(listSnapshots);
+  type Snapshot = Awaited<ReturnType<typeof listSnapshots>>[number];
+  const [loading, setLoading] = useState(true),
+    [busy, setBusy] = useState(false),
+    [label, setLabel] = useState(""),
+    [confirmId, setConfirmId] = useState<string | null>(null),
+    [snapshots, setSnapshots] = useState<Snapshot[]>([]);
+  async function refresh() {
+    setSnapshots(await list({ data: { projectId } }));
+    setLoading(false);
+  }
+  useEffect(() => {
+    void refresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId]);
+  async function create() {
+    setBusy(true);
+    await onCreateManual(label.trim() || undefined);
+    setLabel("");
+    await refresh();
+    setBusy(false);
+  }
+  async function restore(id: string) {
+    setBusy(true);
+    await onRestore(id);
+    setConfirmId(null);
+    await refresh();
+    setBusy(false);
+  }
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/30"
+      onMouseDown={onClose}
+    >
+      <div
+        className="flex max-h-[80vh] w-full max-w-md flex-col rounded-md border bg-popover shadow-xl"
+        onMouseDown={(e) => e.stopPropagation()}
+      >
+        <header className="flex items-center justify-between border-b px-5 py-3">
+          <h2 className="text-lg font-semibold">Pontos de recuperação</h2>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-7"
+            aria-label="Fechar"
+            onClick={onClose}
+          >
+            <X />
+          </Button>
+        </header>
+        {editable && (
+          <div className="flex items-center gap-2 border-b px-5 py-3">
+            <input
+              className="h-9 flex-1 rounded-md border bg-background px-3 text-sm"
+              placeholder="Rótulo (opcional)"
+              maxLength={120}
+              value={label}
+              disabled={busy}
+              onChange={(e) => setLabel(e.target.value)}
+            />
+            <Button size="sm" disabled={busy} onClick={() => void create()}>
+              {busy ? <Loader2 className="animate-spin" /> : <Clock />}
+              Criar ponto
+            </Button>
+          </div>
+        )}
+        <div className="flex-1 overflow-auto p-2">
+          {loading ? (
+            <div className="p-4">
+              <Loader2 className="animate-spin" />
+            </div>
+          ) : snapshots.length === 0 ? (
+            <p className="p-4 text-sm text-muted-foreground">
+              Ainda não há pontos de recuperação. Eles são criados automaticamente conforme você
+              salva, ou manualmente aqui.
+            </p>
+          ) : (
+            <ul className="space-y-1">
+              {snapshots.map((s) => (
+                <li key={s.id} className="rounded-sm border px-3 py-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium">
+                        {s.label || (s.kind === "manual" ? "Ponto manual" : "Autosave")}
+                      </p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {new Date(s.createdAt).toLocaleString("pt-BR")} · {s.authorName} ·{" "}
+                        {s.kind === "manual" ? "manual" : "automático"}
+                      </p>
+                    </div>
+                    {editable &&
+                      (confirmId === s.id ? (
+                        <span className="flex shrink-0 gap-1">
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            disabled={busy}
+                            onClick={() => void restore(s.id)}
+                          >
+                            Confirmar
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            disabled={busy}
+                            onClick={() => setConfirmId(null)}
+                          >
+                            Cancelar
+                          </Button>
+                        </span>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="shrink-0"
+                          disabled={busy}
+                          onClick={() => setConfirmId(s.id)}
+                        >
+                          <RotateCcw />
+                          Restaurar
+                        </Button>
+                      ))}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 function EditorMenu({

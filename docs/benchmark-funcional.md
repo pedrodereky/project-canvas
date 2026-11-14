@@ -7,7 +7,7 @@ recursos — todas as 11 versões listadas, de 12.0 a 2026.1 (consulta em
 
 **Escopo e limites (importante).** Este documento registra apenas _o quê_ existe
 nesse tipo de produto, para informar o roteiro e as decisões de design do
-Wasabii. Conforme a regra inviolável do [CLAUDE.md](../CLAUDE.md) ("Identidade
+Wasabii. Conforme a regra inviolável do [regras do projeto](regras-do-projeto.md) ("Identidade
 própria: nunca usar nomes, ícones, layouts ou marcas de CLO, Marvelous Designer
 ou Blender"):
 
@@ -15,7 +15,7 @@ ou Blender"):
   identidade visual. Os nomes em inglês abaixo são só para rastrear a origem do
   levantamento; a nomenclatura do Wasabii é própria e em português na interface.
 - Isto não é uma lista de tarefas. É referência. Implementação continua regida
-  pelo roteiro de fases e pelas regras do CLAUDE.md (nada de adiantar fase).
+  pelo roteiro de fases e pelas regras do regras do projeto (nada de adiantar fase).
 
 As capacidades estão agrupadas por **tema funcional** (não pela taxonomia de
 marketing da fonte) e mapeadas às fases do Wasabii.
@@ -40,7 +40,7 @@ marketing da fonte) e mapeadas às fases do Wasabii.
 | Otimizar número de pontos de curva | Qualidade de malha de molde |
 | Importar OBJ como molde (com preservação de UV/material) | Pipeline de import, Fase 1+ |
 
-**Já previsto no CLAUDE.md:** molde com contorno (reta/Bézier), linhas internas,
+**Já previsto no regras do projeto:** molde com contorno (reta/Bézier), linhas internas,
 piques, fio do tecido, margem de costura, gradação por tamanho; importação/
 exportação DXF-AAMA/ASTM. O benchmark reforça **simetria** e **pregas/espiral/
 bainha** como itens de primeira classe.
@@ -78,8 +78,8 @@ bainha** como itens de primeira classe.
 
 | Capacidade | Observação |
 |---|---|
-| Presets de corpo; importar avatares (GLB/FBX/OBJ) | CLAUDE.md: presets GLB do MakeHuman CC0; import GLB/glTF/OBJ/FBX |
-| Blend shapes para ajustar silhueta/corpo | CLAUDE.md prevê paramétrico com morph targets próprios (nunca do MakeHuman) |
+| Presets de corpo; importar avatares (GLB/FBX/OBJ) | regras do projeto: presets GLB do MakeHuman CC0; import GLB/glTF/OBJ/FBX |
+| Blend shapes para ajustar silhueta/corpo | regras do projeto prevê paramétrico com morph targets próprios (nunca do MakeHuman) |
 | Rigging automático e por template; espelhar pesos; pincel de suavização; editar juntas-alvo | Avançado; necessário para animação/produção |
 | IK para ajustar pose; editar/ocultar/dimensionar juntas; visualização de juntas sob a roupa | Edição de pose do avatar |
 | Gerar pose por palavra-chave/imagem (IA); poses de mão | IA — fora do roteiro atual (ver §9) |
@@ -115,12 +115,12 @@ materialId; Trim como objeto; pilha de modificadores por objeto.
 
 | Capacidade | Observação para o Wasabii |
 |---|---|
-| glTF/GLB, USD/USDZ, OBJ | **Alinhado** ao CLAUDE.md (glTF/GLB, OBJ, USDZ) |
-| FBX, Alembic | **Divergência intencional:** CLAUDE.md define FBX/Alembic como **não suportados**. Manter assim salvo pedido explícito |
+| glTF/GLB, USD/USDZ, OBJ | **Alinhado** ao regras do projeto (glTF/GLB, OBJ, USDZ) |
+| FBX, Alembic | **Divergência intencional:** regras do projeto define FBX/Alembic como **não suportados**. Manter assim salvo pedido explícito |
 | Câmera (import/export); opções de camada USD; exportar dados de animação; faixa de reprodução; bake de keyframes | Pipeline; parte cai na Fase 4 (exportação) |
 | Sincronização com Unreal (LiveSync) e conector Omniverse | Integrações externas; fora do escopo atual |
 | Importar MetaHuman (DNA); 18 tipos de corpo MetaHuman | Avatar/pipeline (Fase 2) |
-| Conversão de eixos na importação/exportação | CLAUDE.md: Y-up mão direita; Z-up só na import/export — **alinhado** |
+| Conversão de eixos na importação/exportação | regras do projeto: Y-up mão direita; Z-up só na import/export — **alinhado** |
 
 ## 8. Usabilidade, UI e workflow → Fase 0 + transversal
 
@@ -142,14 +142,14 @@ materialId; Trim como objeto; pilha de modificadores por objeto.
 Estúdio de IA com geradores de textura, gráfico e pose, e ativação/desativação
 de recursos de IA. O roteiro do Wasabii (Fases 0–7) **não tem fase de IA**.
 Registrar como possível direção futura; **não** iniciar sem pedido explícito e
-sem revisão de licenças/custos (regra 3 e regra de licenças do CLAUDE.md).
+sem revisão de licenças/custos (regra 3 e regra de licenças do regras do projeto).
 
 ## 10. Produção (gradação, POM, ficha técnica) → Fase 4
 
 A fonte é forte em design/simulação e mais fraca em documentação de produção.
 Itens correlatos observados: mapas de ajuste/caimento, casar medidas, preservar
 forma ao escalar. **Gradação por tabela de medidas, POMs e ficha técnica em PDF**
-seguem como previstos no CLAUDE.md e podem ser um **diferencial** do Wasabii, não
+seguem como previstos no regras do projeto e podem ser um **diferencial** do Wasabii, não
 só paridade.
 
 ---

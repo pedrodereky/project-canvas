@@ -1,6 +1,6 @@
 # Licenças dos pacotes
 
-Todas as dependências diretas do projeto (produção e desenvolvimento), conferidas em `node_modules/<pacote>/package.json`. Nenhuma é GPL, LGPL, AGPL ou não-comercial — todas permitidas pelo `CLAUDE.md` (MIT, ISC ou Apache-2.0).
+Todas as dependências diretas do projeto (produção e desenvolvimento), conferidas em `node_modules/<pacote>/package.json`. Nenhuma é GPL, LGPL, AGPL ou não-comercial — todas permitidas pelo `regras-do-projeto.md` (MIT, ISC ou Apache-2.0).
 
 ## Produção
 
@@ -93,4 +93,4 @@ Todas as dependências diretas do projeto (produção e desenvolvimento), confer
 
 ## Avatares (créditos, não licença de pacote npm)
 
-Presets de avatar planejados para a Fase 2 usarão GLB exportados da versão oficial do [MakeHuman](http://www.makehuman.org/) (CC0), conforme o `CLAUDE.md`. Nenhum morph target ou código-fonte do MakeHuman será incorporado ao projeto — apenas as malhas exportadas.
+Presets de avatar planejados para a Fase 2 usarão GLB exportados da versão oficial do [MakeHuman](http://www.makehuman.org/) (CC0), conforme o `regras-do-projeto.md`. Nenhum morph target ou código-fonte do MakeHuman será incorporado ao projeto — apenas as malhas exportadas.

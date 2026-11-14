@@ -11,7 +11,7 @@
  * classes (e.g. --color-primary -> bg-primary, text-primary).
  *
  * :root defines the actual color values using oklch, and is the only theme
- * — Wasabii Art is dark by design (see CLAUDE.md "Identidade visual"), there is no
+ * — Wasabii Art is dark by design (see docs/regras-do-projeto.md, "Identidade visual"), there is no
  * light/dark toggle. All colors MUST use oklch format.
  *
  * To add a new semantic color:
@@ -115,7 +115,7 @@
 }
 
 /*
- * Subtle film-grain overlay for dark, cinematic sections (see CLAUDE.md
+ * Subtle film-grain overlay for dark, cinematic sections (see docs/regras-do-projeto.md
  * "Identidade visual"). Pure CSS/SVG noise, no image asset: a feTurbulence
  * filter rendered as a tiled background, blended softly over whatever sits
  * beneath it. Apply on an absolutely-positioned, pointer-events-none layer.

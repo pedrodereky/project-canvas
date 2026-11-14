@@ -1,6 +1,6 @@
 # Status da Fase 0
 
-Auditoria do código herdado do Lovable contra `docs/fase-0.md` e as regras do `CLAUDE.md`, feita antes de qualquer alteração funcional, e o registro de como cada uma das 9 etapas do plano resultante mudou esse estado. As 9 etapas estão concluídas — ver "Estado final da Fase 0" ao fim deste documento.
+Auditoria do código herdado do Lovable contra `docs/fase-0.md` e as regras do `regras-do-projeto.md`, feita antes de qualquer alteração funcional, e o registro de como cada uma das 9 etapas do plano resultante mudou esse estado. As 9 etapas estão concluídas — ver "Estado final da Fase 0" ao fim deste documento.
 
 Legenda: ✅ Feito · 🟡 Parcial · ❌ Faltando
 
@@ -31,8 +31,8 @@ Legenda: ✅ Feito · 🟡 Parcial · ❌ Faltando
 ## 3. Banco, segurança e arquivos
 
 - Tabelas `projects`, `project_members`, `project_invites`, `share_links`, `project_locks`, `user_preferences` com RLS: ✅, bem implementado (regras de acesso vivem no banco via `is_project_owner`/`is_project_member`/`can_edit_project`, não só no app).
-- Papéis salvos em inglês (`editor`/`commenter`/`viewer`) com rótulos em português só na UI: ✅ — já segue o `CLAUDE.md`.
-- **Contraria o `CLAUDE.md` (regra 20)**: migrações vivem em `drizzle/migrations` via drizzle-kit + `LOVABLE_DB_MIGRATION_URL`, não em `supabase/migrations`. Corrigido nesta etapa (SQL copiado para `supabase/migrations/`).
+- Papéis salvos em inglês (`editor`/`commenter`/`viewer`) com rótulos em português só na UI: ✅ — já segue o `regras-do-projeto.md`.
+- **Contraria o `regras-do-projeto.md` (regra 20)**: migrações vivem em `drizzle/migrations` via drizzle-kit + `LOVABLE_DB_MIGRATION_URL`, não em `supabase/migrations`. Corrigido nesta etapa (SQL copiado para `supabase/migrations/`).
 - Token bruto nunca persistido, só hash: ✅ (`tokenHash` em `projects.functions.ts`).
 - Documento no Storage em `projects/{id}/document.json` + políticas de Storage: ✅.
 - Chave secreta do Supabase só no servidor, importada dentro de handlers (nunca top-level em rota/`*.functions.ts`): ✅ — boa prática já seguida.
@@ -93,13 +93,13 @@ Legenda: ✅ Feito · 🟡 Parcial · ❌ Faltando
 
 🟡 A etapa 7 (WebGPU/fallback, câmera das vistas numéricas, `OrbitControls`) não ganhou teste automatizado novo — é integração com APIs de GPU/DOM que o Vitest (ambiente Node) não consegue exercitar; só dá para validar de verdade num navegador.
 
-❌ Não havia scripts `test`/`typecheck` no `package.json` (regra 18 do `CLAUDE.md`) — **corrigido nesta etapa**.
+❌ Não havia scripts `test`/`typecheck` no `package.json` (regra 18 do `regras-do-projeto.md`) — **corrigido nesta etapa**.
 
 ✅ `bun run lint` estava com 484 erros (quase todos formatação Prettier, herdados do estilo denso gerado pelo Lovable) — corrigido nesta etapa com `prettier --write` + `eslint --fix`, mais 2 ajustes manuais mínimos (ternário usado como statement em `EditorShell.tsx`, `let`→`const` em `previewAuthStorage.ts`). Restam só 15 avisos pré-existentes de `react-hooks/exhaustive-deps` e `react-refresh` (padrão em projetos shadcn), sem erros.
 
 ## 12. Checklist manual de aceite (`docs/fase-0.md`)
 
-Avaliação por leitura de código — **não é a mesma coisa que ter rodado no navegador**. Cada linha diz o que sustenta a expectativa e, quando existe, o risco de não ter sido visto com os próprios olhos. Confirmação final é sua, como o `CLAUDE.md` já estabelece.
+Avaliação por leitura de código — **não é a mesma coisa que ter rodado no navegador**. Cada linha diz o que sustenta a expectativa e, quando existe, o risco de não ter sido visto com os próprios olhos. Confirmação final é sua, como o `regras-do-projeto.md` já estabelece.
 
 | #   | Teste                                                                           | Avaliação                                                                                                                                                                                                               |
 | --- | ------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -127,7 +127,7 @@ Avaliação por leitura de código — **não é a mesma coisa que ter rodado no
 
 **Deixado como está intencionalmente, fora do escopo de limpeza de resíduos:**
 
-- `@lovable.dev/vite-tanstack-config` (`vite.config.ts`) — pacote público no npm (não bloqueia `bun install`), mas embute defaults de Cloudflare/nitro e detecção de sandbox do Lovable. Trocá-lo por uma configuração Vite própria é uma mudança de arquitetura maior (a regra 5 do `CLAUDE.md` exige pedido explícito antes de trocar stack/arquitetura) — decisão fica para quando/se for necessário.
+- `@lovable.dev/vite-tanstack-config` (`vite.config.ts`) — pacote público no npm (não bloqueia `bun install`), mas embute defaults de Cloudflare/nitro e detecção de sandbox do Lovable. Trocá-lo por uma configuração Vite própria é uma mudança de arquitetura maior (a regra 5 do `regras-do-projeto.md` exige pedido explícito antes de trocar stack/arquitetura) — decisão fica para quando/se for necessário.
 
 **Removido na etapa 3:**
 
@@ -160,5 +160,5 @@ Cada etapa termina com `bun run test`, `bun run typecheck` (e lint quando aplic�
 As 9 etapas do plano estão concluídas. O que resta, e não depende de mim escrever mais código:
 
 - **Trocar o backend**: o `.env` ainda aponta para o Supabase do Lovable Cloud. Falta você criar o projeto Supabase próprio, aplicar `supabase/migrations/` e preencher o `.env` local — os passos exatos estão na minha resposta original (seção 3), antes da etapa 1.
-- **Testar no navegador**: o `CLAUDE.md` deste projeto define que testes no navegador são seus. A seção 12 lista os 15 passos do `docs/fase-0.md` com minha avaliação por leitura de código, mas nenhum foi confirmado com os próprios olhos rodando. As peças de maior risco, por dependerem de renderização 3D real e de uma sessão autenticada que não tenho, são: o contorno de seleção sob WebGPU real (item 72), as vistas numéricas/câmera (item 74) e o modo gráfico na barra de status (item 9 da seção 12).
+- **Testar no navegador**: o `regras-do-projeto.md` deste projeto define que testes no navegador são seus. A seção 12 lista os 15 passos do `docs/fase-0.md` com minha avaliação por leitura de código, mas nenhum foi confirmado com os próprios olhos rodando. As peças de maior risco, por dependerem de renderização 3D real e de uma sessão autenticada que não tenho, são: o contorno de seleção sob WebGPU real (item 72), as vistas numéricas/câmera (item 74) e o modo gráfico na barra de status (item 9 da seção 12).
 - **Dívida conhecida, fora do escopo de qualquer etapa**: edição de campos por arraste (scrub) nas Propriedades continua ausente (seção 8); é uma peça pequena e isolada, mas não estava em nenhuma etapa deste plano.

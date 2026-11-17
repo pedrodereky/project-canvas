@@ -41,3 +41,7 @@ bun run typecheck   # checagem de tipos (tsc --noEmit)
 bun run lint        # eslint
 bun run format      # prettier --write
 ```
+
+## Banco de dados
+
+As migrations ficam em `supabase/migrations` e são aplicadas em ordem (`supabase db push`). A `20250101000003` restringe as funções `SECURITY DEFINER` (permissões de projeto e travas de edição) a usuários logados: aplique-a também em projetos já existentes.

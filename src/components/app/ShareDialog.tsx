@@ -24,9 +24,16 @@ export function ShareDialog({ projectId }: { projectId: string }) {
     [role, setRole] = useState<Role>("viewer"),
     [expiresAt, setExpiresAt] = useState(""),
     [link, setLink] = useState(""),
-    [message, setMessage] = useState("");
+    [message, setMessage] = useState(""),
+    [loadError, setLoadError] = useState(false);
   async function refresh() {
-    setData(await get({ data: { projectId } }));
+    setLoadError(false);
+    try {
+      setData(await get({ data: { projectId } }));
+    } catch {
+      // Sem isso, uma falha deixava o spinner de "Pessoas" girando para sempre.
+      setLoadError(true);
+    }
   }
   useEffect(() => {
     void refresh();
@@ -152,7 +159,14 @@ export function ShareDialog({ projectId }: { projectId: string }) {
           </div>
           <div className="border-t pt-5">
             <h3 className="mb-3 text-sm font-semibold">Pessoas</h3>
-            {!data ? (
+            {loadError ? (
+              <p className="text-sm text-destructive">
+                Não foi possível carregar quem tem acesso.{" "}
+                <button type="button" className="underline" onClick={() => void refresh()}>
+                  Tentar de novo
+                </button>
+              </p>
+            ) : !data ? (
               <Loader2 className="animate-spin" />
             ) : (
               <div className="space-y-2">

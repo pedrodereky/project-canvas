@@ -29,7 +29,7 @@ function Invite() {
   const { token } = Route.useParams(),
     consume = useServerFn(consumeInvite),
     navigate = useNavigate(),
-    [state, setState] = useState<"loading" | "auth" | "invalid">("loading");
+    [state, setState] = useState<"loading" | "auth" | "invalid" | "error">("loading");
   useEffect(() => {
     void (async () => {
       const { data } = await supabase.auth.getUser();
@@ -37,7 +37,14 @@ function Invite() {
         setState("auth");
         return;
       }
-      const result = await consume({ data: { token } });
+      let result: Awaited<ReturnType<typeof consume>>;
+      try {
+        result = await consume({ data: { token } });
+      } catch {
+        // Falha de rede ou do servidor: sem isso a tela ficava em "Validando convite…" para sempre.
+        setState("error");
+        return;
+      }
       if (result.ok && result.projectId)
         void navigate({
           to: "/project/$projectId",
@@ -66,6 +73,17 @@ function Invite() {
               <Link to="/auth" search={{ next: `/invite/${token}` }}>
                 Entrar ou criar conta
               </Link>
+            </Button>
+          </>
+        ) : state === "error" ? (
+          <>
+            <XCircle className="mx-auto size-10 text-destructive" />
+            <h1 className="mt-4 text-xl font-semibold">Não foi possível validar o convite</h1>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Verifique sua conexão e tente de novo.
+            </p>
+            <Button className="mt-6" onClick={() => location.reload()}>
+              Tentar de novo
             </Button>
           </>
         ) : (

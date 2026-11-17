@@ -24,21 +24,21 @@ marketing da fonte) e mapeadas às fases do Wasabii.
 
 ## 1. Molde 2D e desenho de padrão → Fase 1
 
-| Capacidade | Observação para o Wasabii |
-|---|---|
-| Desenhar no 3D sobre o avatar e virar molde 2D | Fluxo "caneta 3D"; avançado, depende de avatar (Fase 2) + molde (Fase 1) |
-| Gerar molde base a partir de medidas/palavras-chave | "Pattern drafter"; útil como acelerador; casa com tabela de medidas (Fase 4) |
-| Edição de linhas internas: offset múltiplo, curvas suaves, converter ponto segmento↔curva | Núcleo do editor 2D da Fase 1 |
-| Pregas (pleats) em forma/padrão escolhido | Fase 1 |
-| Espiral como primitiva de molde | Fase 1 |
-| Ângulo de dobra variável (início/fim da linha interna) | Refinamento de linha interna, Fase 1 |
-| Simetria: espelhar metade de molde meio-simétrico, travar cruzamento da linha central, desvincular simetria de linha interna, espelhar piques/pins | Simetria é tema recorrente; planejar desde a Fase 1 |
-| Bainhas/dobras rápidas (roll up de mangas, barras) | Fase 1 |
-| Casar medidas entre moldes 2D | Fase 1/4 |
-| Régua e guias no espaço 2D; exibir profundidade de camada | Usabilidade do editor 2D |
-| Preservar forma 3D ao escalar molde 2D | Comportamento de gradação/escala; relevante p/ Fase 4 |
-| Otimizar número de pontos de curva | Qualidade de malha de molde |
-| Importar OBJ como molde (com preservação de UV/material) | Pipeline de import, Fase 1+ |
+| Capacidade                                                                                                                                         | Observação para o Wasabii                                                    |
+| -------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| Desenhar no 3D sobre o avatar e virar molde 2D                                                                                                     | Fluxo "caneta 3D"; avançado, depende de avatar (Fase 2) + molde (Fase 1)     |
+| Gerar molde base a partir de medidas/palavras-chave                                                                                                | "Pattern drafter"; útil como acelerador; casa com tabela de medidas (Fase 4) |
+| Edição de linhas internas: offset múltiplo, curvas suaves, converter ponto segmento↔curva                                                          | Núcleo do editor 2D da Fase 1                                                |
+| Pregas (pleats) em forma/padrão escolhido                                                                                                          | Fase 1                                                                       |
+| Espiral como primitiva de molde                                                                                                                    | Fase 1                                                                       |
+| Ângulo de dobra variável (início/fim da linha interna)                                                                                             | Refinamento de linha interna, Fase 1                                         |
+| Simetria: espelhar metade de molde meio-simétrico, travar cruzamento da linha central, desvincular simetria de linha interna, espelhar piques/pins | Simetria é tema recorrente; planejar desde a Fase 1                          |
+| Bainhas/dobras rápidas (roll up de mangas, barras)                                                                                                 | Fase 1                                                                       |
+| Casar medidas entre moldes 2D                                                                                                                      | Fase 1/4                                                                     |
+| Régua e guias no espaço 2D; exibir profundidade de camada                                                                                          | Usabilidade do editor 2D                                                     |
+| Preservar forma 3D ao escalar molde 2D                                                                                                             | Comportamento de gradação/escala; relevante p/ Fase 4                        |
+| Otimizar número de pontos de curva                                                                                                                 | Qualidade de malha de molde                                                  |
+| Importar OBJ como molde (com preservação de UV/material)                                                                                           | Pipeline de import, Fase 1+                                                  |
 
 **Já previsto no regras do projeto:** molde com contorno (reta/Bézier), linhas internas,
 piques, fio do tecido, margem de costura, gradação por tamanho; importação/
@@ -47,95 +47,95 @@ bainha** como itens de primeira classe.
 
 ## 2. Costura e junção → Fase 3 (costura) / Fase 1 (definição de costuras)
 
-| Capacidade | Observação |
-|---|---|
-| Costura automática ao arranjar moldes | Acelerador; a definição de costuras (pares de borda) é do modelo de dados |
-| Selecionar todos os moldes ligados por costura | Usabilidade |
-| Clonar forma interna como molde já com costura | Usabilidade |
-| Rasgar costura em tempo real por força, com esgarçamento | Depende do solver (Fase 3) |
-| Soldar vértices de costura "viradas" na exportação | Pipeline/exportação |
-| Fita de costura (seam tape), com/sem sobreposição | Fase 3/5 |
-| Pespontos (topstitch): canto suave, otimização de polígonos | Fase 5 (aparência) |
-| Franzido (puckering) ao longo de contornos/linhas/costuras | Fase 3/5 |
-| Debrum (piping) com ponta fechada | Fase 5 |
+| Capacidade                                                  | Observação                                                                |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------- |
+| Costura automática ao arranjar moldes                       | Acelerador; a definição de costuras (pares de borda) é do modelo de dados |
+| Selecionar todos os moldes ligados por costura              | Usabilidade                                                               |
+| Clonar forma interna como molde já com costura              | Usabilidade                                                               |
+| Rasgar costura em tempo real por força, com esgarçamento    | Depende do solver (Fase 3)                                                |
+| Soldar vértices de costura "viradas" na exportação          | Pipeline/exportação                                                       |
+| Fita de costura (seam tape), com/sem sobreposição           | Fase 3/5                                                                  |
+| Pespontos (topstitch): canto suave, otimização de polígonos | Fase 5 (aparência)                                                        |
+| Franzido (puckering) ao longo de contornos/linhas/costuras  | Fase 3/5                                                                  |
+| Debrum (piping) com ponta fechada                           | Fase 5                                                                    |
 
 ## 3. Simulação física → Fase 3
 
-| Capacidade | Observação |
-|---|---|
-| Simulação em GPU (NVIDIA; Metal no Apple Silicon) com paridade de colisão vs CPU | Casa com o plano: solver XPBD em compute shaders WGSL + fallback CPU em worker |
-| Corpo mole (soft body) p/ elasticidade de pele; inclusive avatares custom | Interação tecido↔corpo mais realista; extensão futura do solver |
-| "Beliscar" (pinch) com pincel e seleção suave (falloff); override temporário de valores | Modelagem de rugas/dobras; interação de simulação |
-| Vento com múltiplos controladores | Ambiente de simulação |
-| Parar simulação instantaneamente mesmo sob sobrecarga | Requisito de UX do solver |
-| Simulação de aviamentos (trims) com colisão; alinhar direção de colisão à de render | Fase 3/5 |
-| Mapas de deformação cientes do tecido (strain); propriedades de caimento (stress/strain/pressão); mapa de ajuste no 2D | Ponte simulação→produção (Fase 4) |
+| Capacidade                                                                                                             | Observação                                                                     |
+| ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| Simulação em GPU (NVIDIA; Metal no Apple Silicon) com paridade de colisão vs CPU                                       | Casa com o plano: solver XPBD em compute shaders WGSL + fallback CPU em worker |
+| Corpo mole (soft body) p/ elasticidade de pele; inclusive avatares custom                                              | Interação tecido↔corpo mais realista; extensão futura do solver                |
+| "Beliscar" (pinch) com pincel e seleção suave (falloff); override temporário de valores                                | Modelagem de rugas/dobras; interação de simulação                              |
+| Vento com múltiplos controladores                                                                                      | Ambiente de simulação                                                          |
+| Parar simulação instantaneamente mesmo sob sobrecarga                                                                  | Requisito de UX do solver                                                      |
+| Simulação de aviamentos (trims) com colisão; alinhar direção de colisão à de render                                    | Fase 3/5                                                                       |
+| Mapas de deformação cientes do tecido (strain); propriedades de caimento (stress/strain/pressão); mapa de ajuste no 2D | Ponte simulação→produção (Fase 4)                                              |
 
 **Já previsto:** solver XPBD próprio, fallback CPU, propriedades de tecido
 (elasticidade trama/urdume, cisalhamento, flexão, gramatura, espessura, atrito).
 
 ## 4. Avatar e arranjo → Fase 2
 
-| Capacidade | Observação |
-|---|---|
-| Presets de corpo; importar avatares (GLB/FBX/OBJ) | regras do projeto: presets GLB do MakeHuman CC0; import GLB/glTF/OBJ/FBX |
-| Blend shapes para ajustar silhueta/corpo | regras do projeto prevê paramétrico com morph targets próprios (nunca do MakeHuman) |
-| Rigging automático e por template; espelhar pesos; pincel de suavização; editar juntas-alvo | Avançado; necessário para animação/produção |
-| IK para ajustar pose; editar/ocultar/dimensionar juntas; visualização de juntas sob a roupa | Edição de pose do avatar |
-| Gerar pose por palavra-chave/imagem (IA); poses de mão | IA — fora do roteiro atual (ver §9) |
-| Converter FBX de motion em movimento do avatar; auto-converter custom em avatar compatível | Pipeline de animação |
-| Criar "fitting suit" automático ao importar avatar | Auxílio de vestição |
-| Auto-fitting mantendo topologia e tamanho de textura | Vestir rápido preservando qualidade |
+| Capacidade                                                                                  | Observação                                                                          |
+| ------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| Presets de corpo; importar avatares (GLB/FBX/OBJ)                                           | regras do projeto: presets GLB do MakeHuman CC0; import GLB/glTF/OBJ/FBX            |
+| Blend shapes para ajustar silhueta/corpo                                                    | regras do projeto prevê paramétrico com morph targets próprios (nunca do MakeHuman) |
+| Rigging automático e por template; espelhar pesos; pincel de suavização; editar juntas-alvo | Avançado; necessário para animação/produção                                         |
+| IK para ajustar pose; editar/ocultar/dimensionar juntas; visualização de juntas sob a roupa | Edição de pose do avatar                                                            |
+| Gerar pose por palavra-chave/imagem (IA); poses de mão                                      | IA — fora do roteiro atual (ver §9)                                                 |
+| Converter FBX de motion em movimento do avatar; auto-converter custom em avatar compatível  | Pipeline de animação                                                                |
+| Criar "fitting suit" automático ao importar avatar                                          | Auxílio de vestição                                                                 |
+| Auto-fitting mantendo topologia e tamanho de textura                                        | Vestir rápido preservando qualidade                                                 |
 
 ## 5. Materiais, aviamentos e texturas → Fase 5
 
-| Capacidade | Observação |
-|---|---|
-| Mapas PBR: gerar a partir de imagem; melhorias de base color/normal/displacement/opacity/reflection | Fase 5 (grafo de nós de material) |
-| Trocar cor de tecido sólido sem perder acurácia; mesclar estampa/gráfico ao tecido | Fase 5 |
-| Fur (pelo) no 3D; shader toon; render esquemático (tipo croqui) | Estilos de render; Fase 5+ |
-| Travar gráficos; ligar/desligar gráficos no 3D; gráfico fora do molde em translúcido | Usabilidade de material |
+| Capacidade                                                                                                                                                       | Observação                              |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
+| Mapas PBR: gerar a partir de imagem; melhorias de base color/normal/displacement/opacity/reflection                                                              | Fase 5 (grafo de nós de material)       |
+| Trocar cor de tecido sólido sem perder acurácia; mesclar estampa/gráfico ao tecido                                                                               | Fase 5                                  |
+| Fur (pelo) no 3D; shader toon; render esquemático (tipo croqui)                                                                                                  | Estilos de render; Fase 5+              |
+| Travar gráficos; ligar/desligar gráficos no 3D; gráfico fora do molde em translúcido                                                                             | Usabilidade de material                 |
 | Botões (presets metálicos padrão YKK), casas de botão (Z-offset), zíper (bidirecional, dentes OBJ custom, editar comprimento, estender ponta, estilo no browser) | Aviamentos; modelo de dados já tem Trim |
-| Janela dedicada de aviamentos; converter molde em aviamento/acessório; registrar acessórios (inclusive com rig); categoria "chapéu" que adapta ao avatar | Organização de aviamentos/acessórios |
-| Carregar todos os mapas de textura da mesma pasta | Pipeline de import |
+| Janela dedicada de aviamentos; converter molde em aviamento/acessório; registrar acessórios (inclusive com rig); categoria "chapéu" que adapta ao avatar         | Organização de aviamentos/acessórios    |
+| Carregar todos os mapas de textura da mesma pasta                                                                                                                | Pipeline de import                      |
 
 **Já previsto:** Material como grafo de nós serializado em JSON; Fabric com
 materialId; Trim como objeto; pilha de modificadores por objeto.
 
 ## 6. Modelagem poligonal, retopologia e UV → Fase 6
 
-| Capacidade | Observação |
-|---|---|
-| Escultura (sculpt) na janela 3D | Fase 6 |
-| Retopologia/quad remesh; melhorias de patch topology; soldar vértices por proximidade (malha "estanque") | Fase 6 |
-| Otimização de polígonos (botões/acessórios/zíper) | Fase 6/pipeline |
-| Editor de UV: empacotamento/nesting, expansão lateral/traseira, coordenadas unificadas, baking de textura, padding ajustável, exibir só UVs do objeto selecionado, selecionar shells de mesma propriedade | Fase 6 (UV) |
+| Capacidade                                                                                                                                                                                                | Observação      |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------- |
+| Escultura (sculpt) na janela 3D                                                                                                                                                                           | Fase 6          |
+| Retopologia/quad remesh; melhorias de patch topology; soldar vértices por proximidade (malha "estanque")                                                                                                  | Fase 6          |
+| Otimização de polígonos (botões/acessórios/zíper)                                                                                                                                                         | Fase 6/pipeline |
+| Editor de UV: empacotamento/nesting, expansão lateral/traseira, coordenadas unificadas, baking de textura, padding ajustável, exibir só UVs do objeto selecionado, selecionar shells de mesma propriedade | Fase 6 (UV)     |
 
 ## 7. Pipeline, importação e exportação → transversal (exportação na Fase 4)
 
-| Capacidade | Observação para o Wasabii |
-|---|---|
-| glTF/GLB, USD/USDZ, OBJ | **Alinhado** ao regras do projeto (glTF/GLB, OBJ, USDZ) |
-| FBX, Alembic | **Divergência intencional:** regras do projeto define FBX/Alembic como **não suportados**. Manter assim salvo pedido explícito |
-| Câmera (import/export); opções de camada USD; exportar dados de animação; faixa de reprodução; bake de keyframes | Pipeline; parte cai na Fase 4 (exportação) |
-| Sincronização com Unreal (LiveSync) e conector Omniverse | Integrações externas; fora do escopo atual |
-| Importar MetaHuman (DNA); 18 tipos de corpo MetaHuman | Avatar/pipeline (Fase 2) |
-| Conversão de eixos na importação/exportação | regras do projeto: Y-up mão direita; Z-up só na import/export — **alinhado** |
+| Capacidade                                                                                                       | Observação para o Wasabii                                                                                                      |
+| ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| glTF/GLB, USD/USDZ, OBJ                                                                                          | **Alinhado** ao regras do projeto (glTF/GLB, OBJ, USDZ)                                                                        |
+| FBX, Alembic                                                                                                     | **Divergência intencional:** regras do projeto define FBX/Alembic como **não suportados**. Manter assim salvo pedido explícito |
+| Câmera (import/export); opções de camada USD; exportar dados de animação; faixa de reprodução; bake de keyframes | Pipeline; parte cai na Fase 4 (exportação)                                                                                     |
+| Sincronização com Unreal (LiveSync) e conector Omniverse                                                         | Integrações externas; fora do escopo atual                                                                                     |
+| Importar MetaHuman (DNA); 18 tipos de corpo MetaHuman                                                            | Avatar/pipeline (Fase 2)                                                                                                       |
+| Conversão de eixos na importação/exportação                                                                      | regras do projeto: Y-up mão direita; Z-up só na import/export — **alinhado**                                                   |
 
 ## 8. Usabilidade, UI e workflow → Fase 0 + transversal
 
-| Capacidade | Observação |
-|---|---|
-| Busca de comandos no menu | **= F3 do Wasabii; já na Fase 0** |
-| Customizar barras de ferramentas; layout de UI próprio salvável; cor de UI por preferência | Áreas divisíveis já previstas; customização de toolbar é extensão |
-| Autosave temporal com múltiplas versões e escolha do ponto de recuperação | Boa adição à persistência (Fase 0); hoje há salvar, não versionado |
-| Miniatura no ícone do projeto | Nice-to-have |
-| Navegador de objetos (cena/tecido/gráfico/botão/pesponto/...) | **= outliner; já na Fase 0** |
-| Isolar seleção; mostrar/ocultar menu de cores de estado; selecionar grupo de pins | Usabilidade de editor |
-| Operações aritméticas nos campos numéricos, com atualização em tempo real | Relevante: soma à lacuna conhecida de "arrastar p/ ajustar" nos campos de Propriedades (ver fase-0-status) |
-| Biblioteca modular/unificada; preview na biblioteca ancorada | Biblioteca de assets; futuro |
-| Hotkey para alternar layout de viewport; estatísticas da peça; marcadores na timeline; captura de vídeo; keyframe animation | Mistura Fase 0 (layout) e fases de animação |
-| Login unificado por e-mail (uma conta) | **= contas do Wasabii; já na Fase 0** |
+| Capacidade                                                                                                                  | Observação                                                                                                 |
+| --------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Busca de comandos no menu                                                                                                   | **= F3 do Wasabii; já na Fase 0**                                                                          |
+| Customizar barras de ferramentas; layout de UI próprio salvável; cor de UI por preferência                                  | Áreas divisíveis já previstas; customização de toolbar é extensão                                          |
+| Autosave temporal com múltiplas versões e escolha do ponto de recuperação                                                   | Boa adição à persistência (Fase 0); hoje há salvar, não versionado                                         |
+| Miniatura no ícone do projeto                                                                                               | Nice-to-have                                                                                               |
+| Navegador de objetos (cena/tecido/gráfico/botão/pesponto/...)                                                               | **= outliner; já na Fase 0**                                                                               |
+| Isolar seleção; mostrar/ocultar menu de cores de estado; selecionar grupo de pins                                           | Usabilidade de editor                                                                                      |
+| Operações aritméticas nos campos numéricos, com atualização em tempo real                                                   | Relevante: soma à lacuna conhecida de "arrastar p/ ajustar" nos campos de Propriedades (ver fase-0-status) |
+| Biblioteca modular/unificada; preview na biblioteca ancorada                                                                | Biblioteca de assets; futuro                                                                               |
+| Hotkey para alternar layout de viewport; estatísticas da peça; marcadores na timeline; captura de vídeo; keyframe animation | Mistura Fase 0 (layout) e fases de animação                                                                |
+| Login unificado por e-mail (uma conta)                                                                                      | **= contas do Wasabii; já na Fase 0**                                                                      |
 
 ## 9. Inteligência artificial → fora do roteiro atual
 
